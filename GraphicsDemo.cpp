@@ -452,9 +452,6 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 #ifdef __TESTING_MODE__
 	QueryPerformanceCounter(&intEnd);
-	_stprintf(lpResult, TEXT("Время фильтра: %.02f сек."), (double)(intEnd.QuadPart - intStart.QuadPart) /
-		(double)intFreq.QuadPart);
-	MessageBox(NULL, lpResult, TEXT("Результат выполнения"), MB_ICONINFORMATION);
 #endif
 
 	if (IsWindowVisible(IPI.hWndProgress))
@@ -465,6 +462,12 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 	if (!IPI.hDBDC)
 		ReleaseDC(IPI.hWndCanvas, hDC);
+
+#ifdef __TESTING_MODE__
+	_stprintf(lpResult, TEXT("Время фильтра: %.02f сек."), (double)(intEnd.QuadPart - intStart.QuadPart) /
+		(double)intFreq.QuadPart);
+	MessageBox(NULL, lpResult, TEXT("Результат выполнения"), MB_ICONINFORMATION);
+#endif
 
 	hImgProcThread = NULL;
 	return 0;

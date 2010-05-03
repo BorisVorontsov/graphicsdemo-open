@@ -2,7 +2,7 @@
 #define GDDEFS_H
 
 #define __USE_GDIPLUS__		//Разрешает использование GDI+
-#define __USE_OPENCL__		//Разрешаем использование OpenCL (nVidia GeForce 8-series+; ATi Radeon HD 4-series+)
-//#define __TESTING_MODE__	//Разрешает вывод времени выполнения фильтров
+//#define __USE_OPENCL__		//Разрешаем использование OpenCL (nVidia GeForce 8-series+; ATi Radeon HD 4-series+)
+#define __TESTING_MODE__	//Разрешает вывод времени выполнения фильтров
 
 #endif

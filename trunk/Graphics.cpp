@@ -9,7 +9,6 @@
 #define _WIN32_WINNT	0x0501
 
 #include <windows.h>
-#include <math.h>
 
 #ifdef UNICODE
 
@@ -42,6 +41,7 @@
 #define BLUR_CL_FILE	"Blur_OpenCL.cl"
 #endif
 
+#include "graphicshf.h"
 #include "graphics.h"
 
 //-----------------------------------------------------------------------------------------
@@ -63,11 +63,9 @@
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	ULONG lColor, lR, lG, lB, lPixels;
 	LONG x, x1, x2, x3;
 	LONG y, y1, y2, y3;
@@ -75,36 +73,14 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 	//Параметры событий
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	//Не работаем с изображениями ниже 24 bpp (TrueColor)
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	//Получаем пиксели изображения
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
 	y = pRC->top;
 	while (y < pRC->bottom)
@@ -127,7 +103,7 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 			{
 				for (y3 = y1; y3 <= y2; y3++)
 				{
-					lColor = GetPixel(pPixels, &BMI, x3, y3);
+					lColor = GetPixel(pPixels, pBMI, x3, y3);
 					lR += R_BGR(lColor);
 					lG += G_BGR(lColor);
 					lB += B_BGR(lColor);
@@ -137,7 +113,7 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 			lR /= lPixels;
 			lG /= lPixels;
 			lB /= lPixels;
-			SetPixel(pPixels, &BMI, x, y, BGR(lB, lG, lR));
+			SetPixel(pPixels, pBMI, x, y, BGR(lB, lG, lR));
 			x++;
 		}
 		if (hWndCallback)
@@ -149,13 +125,12 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 		y++;
 	}
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	//Присваиваем измененные пиксели
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -170,11 +145,9 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 
 	cl_int intErr;
 	
@@ -214,36 +187,13 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 		return FALSE;
     }
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	//Не работаем с изображениями ниже 24 bpp (TrueColor)
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
 	strExePath.resize(MAX_PATH, '\0');
 	GetModuleFileNameA(NULL, (LPSTR)strExePath.c_str(), (DWORD)strExePath.size());
@@ -320,13 +270,10 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 		}
 	}
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
 
 	return TRUE;
 }
@@ -345,51 +292,27 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG lBOffset, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	ULONG lColor, lR, lG, lB;
 	LONG i, j;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
     for (j = pRC->top; j < pRC->bottom; j++)
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			lColor = GetPixel(pPixels, &BMI, i, j);
+			lColor = GetPixel(pPixels, pBMI, i, j);
 
 			lR = R_BGR(lColor);
 			lG = G_BGR(lColor);
@@ -399,7 +322,7 @@ BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG 
 			lG = (ULONG)CheckBounds((LONG)(lG += lGOffset), (LONG)0, (LONG)255);
 			lB = (ULONG)CheckBounds((LONG)(lB += lBOffset), (LONG)0, (LONG)255);
 
-			SetPixel(pPixels, &BMI, i, j, BGR(lB, lG, lR));
+			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
 		}
 		if (hWndCallback)
 		{
@@ -409,13 +332,11 @@ BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG 
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -428,51 +349,27 @@ BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG 
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	ULONG lColor, lR, lG, lB, lS;
 	LONG i, j;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
     for (j = pRC->top; j < pRC->bottom; j++)
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			lColor = GetPixel(pPixels, &BMI, i, j);
+			lColor = GetPixel(pPixels, pBMI, i, j);
 
 			//BGR -> RGB
 			lR = R_BGR(lColor);
@@ -482,7 +379,7 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 			lS = (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
 
 			//SSS -> BGR
-			SetPixel(pPixels, &BMI, i, j, BGR(lS, lS, lS));
+			SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
 		}
 		if (hWndCallback)
 		{
@@ -492,13 +389,11 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -512,51 +407,27 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	ULONG lColor, lR, lG, lB;
 	LONG i, j;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
     for (j = pRC->top; j < pRC->bottom; j++)
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			lColor = GetPixel(pPixels, &BMI, i, j);
+			lColor = GetPixel(pPixels, pBMI, i, j);
 
 			lR = R_BGR(lColor);
 			lG = G_BGR(lColor);
@@ -569,7 +440,7 @@ BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, H
 			lB = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lB / 255.0, 1.0 / dblGamma))
 				+ 0.5), (LONG)0, (LONG)255);
 
-			SetPixel(pPixels, &BMI, i, j, BGR(lB, lG, lR));
+			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
 		}
 		if (hWndCallback)
 		{
@@ -579,13 +450,11 @@ BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, H
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -603,47 +472,23 @@ BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, H
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels1, pPixels2;
+	LPBYTE pPixels1 = NULL, pPixels2 = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	ULONG lColor[9], lR, lG, lB;
 	LONG i, j, x, y;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
+		if (pPixels1)
+			delete[] pPixels1;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels1 = new BYTE[lBytesCnt];
 	pPixels2 = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels1, &BMI, DIB_RGB_COLORS);
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels2, &BMI, DIB_RGB_COLORS);
+	CopyMemory(pPixels2, pPixels1, lBytesCnt);
 
     for (j = pRC->top; j < pRC->bottom; j++)
     {
@@ -654,15 +499,15 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
             y = (j == pRC->top)?pRC->top + 1:j;
 			y = (j < (pRC->bottom - 1))?y:j - 1;
 
-			lColor[0] = GetPixel(pPixels2, &BMI, x, y);
-			lColor[1] = GetPixel(pPixels2, &BMI, x, y - 1);
-			lColor[2] = GetPixel(pPixels2, &BMI, x + 1, y - 1);
-			lColor[3] = GetPixel(pPixels2, &BMI, x + 1, y);
-			lColor[4] = GetPixel(pPixels2, &BMI, x + 1, y + 1);
-			lColor[5] = GetPixel(pPixels2, &BMI, x, y + 1);
-			lColor[6] = GetPixel(pPixels2, &BMI, x - 1, y + 1);
-			lColor[7] = GetPixel(pPixels2, &BMI, x - 1, y);
-			lColor[8] = GetPixel(pPixels2, &BMI, x - 1, y - 1);
+			lColor[0] = GetPixel(pPixels2, pBMI, x, y);
+			lColor[1] = GetPixel(pPixels2, pBMI, x, y - 1);
+			lColor[2] = GetPixel(pPixels2, pBMI, x + 1, y - 1);
+			lColor[3] = GetPixel(pPixels2, pBMI, x + 1, y);
+			lColor[4] = GetPixel(pPixels2, pBMI, x + 1, y + 1);
+			lColor[5] = GetPixel(pPixels2, pBMI, x, y + 1);
+			lColor[6] = GetPixel(pPixels2, pBMI, x - 1, y + 1);
+			lColor[7] = GetPixel(pPixels2, pBMI, x - 1, y);
+			lColor[8] = GetPixel(pPixels2, pBMI, x - 1, y - 1);
 
 			lR = (-1 * R_BGR(lColor[1]) - 1 * R_BGR(lColor[2]) - 1 * R_BGR(lColor[3]) - 1 * R_BGR(lColor[4])
 				 - 1 * R_BGR(lColor[5]) - 1 * R_BGR(lColor[6]) - 1 * R_BGR(lColor[7]) - 1 * R_BGR(lColor[8])
@@ -678,7 +523,7 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 			lG = (ULONG)CheckBounds((LONG)lG, (LONG)0, (LONG)255);
 			lB = (ULONG)CheckBounds((LONG)lB, (LONG)0, (LONG)255);
 
-			SetPixel(pPixels1, &BMI, i, j, BGR(lB, lG, lR));
+			SetPixel(pPixels1, pBMI, i, j, BGR(lB, lG, lR));
 		}
 		if (hWndCallback)
 		{
@@ -688,14 +533,12 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels1, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels1;
 	delete[] pPixels2;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -709,11 +552,9 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	LONG x, x1, x2, x3;
 	LONG y, y1, y2, y3;
 	ULONG lColor, lPixels, n;
@@ -721,35 +562,13 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
 
 	y = pRC->top;
 	while (y < pRC->bottom)
@@ -773,7 +592,7 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 			{
 				for (y3 = y1; y3 <= y2; y3++)
 				{
-					lColor = GetPixel(pPixels, &BMI, x3, y3);
+					lColor = GetPixel(pPixels, pBMI, x3, y3);
 					pRGBArr[n] = R_BGR(lColor);
 					(pRGBArr + lPixels)[n] = G_BGR(lColor);
 					(pRGBArr + (lPixels << 1))[n] = B_BGR(lColor);
@@ -786,7 +605,7 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 			//Вот по этому фильтр и называется медиана (серидина) -- берется середина
 			//отсортированных массивов R/G/B
 			n = ((lPixels - 1) >> 1);
-			SetPixel(pPixels, &BMI, x, y, BGR((pRGBArr + (lPixels << 1))[n], (pRGBArr + lPixels)[n], pRGBArr[n]));
+			SetPixel(pPixels, pBMI, x, y, BGR((pRGBArr + (lPixels << 1))[n], (pRGBArr + lPixels)[n], pRGBArr[n]));
 			delete[] pRGBArr;
 			x++;
 		}
@@ -799,13 +618,11 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 		y++;
 	}
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -817,50 +634,26 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCallback)
 {
-    BITMAPINFO BMI = {0};
-    HDC hTmpDC;
-    HBITMAP hOldBitmap, hTmpBitmap;
-    ULONG lBytesCnt;
-    LPBYTE pPixels;
+	LPBYTE pPixels = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
     ULONG lAB = 0;
 	ULONG lColor;
 	LONG i, j, lR, lG, lB, lLevel = abs(lOffset);
 
     volatile ONPROGRESSPARAMS ONPP = {0};
 
-    USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-    if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-    switch (BPP)
-    {
-        case 24:
-            lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-            lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-            break;
-        case 32:
-            lBytesCnt = lW * lH * (BPP / 8);
-            break;
-    }
-
-    pPixels = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-    BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-    GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels, &BMI, DIB_RGB_COLORS);
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+		if (pPixels)
+			delete[] pPixels;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
+	}
 
     for (j = pRC->top; j < pRC->bottom; j++) {
         for (i = pRC->left; i < pRC->right; i++) {
-            lColor = GetPixel(pPixels, &BMI, i, j);
+            lColor = GetPixel(pPixels, pBMI, i, j);
 
             lR = R_BGR(lColor);
             lG = G_BGR(lColor);
@@ -876,7 +669,7 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
     {
         for (i = pRC->left; i < pRC->right; i++)
         {
-            lColor = GetPixel(pPixels, &BMI, i, j);
+            lColor = GetPixel(pPixels, pBMI, i, j);
 
             lR = R_BGR(lColor);
             lG = G_BGR(lColor);
@@ -889,7 +682,7 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
             lB = (ULONG)CheckBounds((LONG)(lB + ((lB - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
                 (double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
 
-            SetPixel(pPixels, &BMI, i, j, BGR(lB, lG, lR));
+            SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
         }
         if (hWndCallback)
         {
@@ -899,13 +692,11 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
         }
     }
 
-    StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI,
-        DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-    SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
-    delete[] pPixels;
+	delete[] pPixels;
+	delete pBMI;
+
     return TRUE;
 }
 
@@ -924,46 +715,22 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels1, pPixels2;
+	LPBYTE pPixels1 = NULL, pPixels2 = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	LONG i, j, x, x1, y, y1, sx, sy;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
+		if (pPixels1)
+			delete[] pPixels1;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels1 = new BYTE[lBytesCnt];
 	pPixels2 = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels1, &BMI, DIB_RGB_COLORS);
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels2, &BMI, DIB_RGB_COLORS);
+	CopyMemory(pPixels2, pPixels1, lBytesCnt);
 
 	//RGB[A] -> BGR[A]
 	ReverseBytes((LPBYTE)&crBkColor, 3);
@@ -973,7 +740,7 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			SetPixel(pPixels1, &BMI, i, j, crBkColor);
+			SetPixel(pPixels1, pBMI, i, j, crBkColor);
 		}
 	}
 
@@ -1006,7 +773,7 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 			if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
 			if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
 
-			SetPixel(pPixels1, &BMI, i, j, GetPixel(pPixels2, &BMI, x, y));
+			SetPixel(pPixels1, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 		}
 		if (hWndCallback)
 		{
@@ -1016,14 +783,12 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels1, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels1;
 	delete[] pPixels2;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -1044,47 +809,23 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDirection, COLORREF crBkColor, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels1, pPixels2;
+	LPBYTE pPixels1 = NULL, pPixels2 = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	LONG i, j, x, y;
 	double dblRad;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
+		if (pPixels1)
+			delete[] pPixels1;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels1 = new BYTE[lBytesCnt];
 	pPixels2 = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels1, &BMI, DIB_RGB_COLORS);
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels2, &BMI, DIB_RGB_COLORS);
+	CopyMemory(pPixels2, pPixels1, lBytesCnt);
 
 	dblRad = (double)(lAngle * (3.14159265358979 / 180));
 
@@ -1097,7 +838,7 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			SetPixel(pPixels1, &BMI, i, j, crBkColor);
+			SetPixel(pPixels1, pBMI, i, j, crBkColor);
 		}
 	}
 
@@ -1123,7 +864,7 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 			if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
 			if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
 
-			SetPixel(pPixels1, &BMI, i, j, GetPixel(pPixels2, &BMI, x, y));
+			SetPixel(pPixels1, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 		}
 		if (hWndCallback)
 		{
@@ -1133,14 +874,12 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels1, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels1;
 	delete[] pPixels2;
+	delete pBMI;
+
 	return TRUE;
 }
 
@@ -1160,47 +899,23 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG lDirection, COLORREF crBkColor, LPRECT pRC, HWND hWndCallback)
 {
-	BITMAPINFO BMI = {0};
-	HDC hTmpDC;
-	HBITMAP hOldBitmap, hTmpBitmap;
-	ULONG lBytesCnt;
-	LPBYTE pPixels1, pPixels2;
+	LPBYTE pPixels1 = NULL, pPixels2 = NULL;
+	ULONG lBytesCnt = 0;
+	LPBITMAPINFO pBMI = NULL;
 	LONG i, j, x, y;
 	double dblFunc;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
-	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
-
-	if ((BPP != 24) && (BPP != 32)) return FALSE;
-
-	switch (BPP)
-	{
-		case 24:
-			lBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			lBytesCnt += ((lBytesCnt * lH + 3) / 4) * 4;
-			break;
-		case 32:
-			lBytesCnt = lW * lH * (BPP / 8);
-			break;
+	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
+		if (pPixels1)
+			delete[] pPixels1;
+		if (pBMI)
+			delete pBMI;
+		return FALSE;
 	}
-
-	pPixels1 = new BYTE[lBytesCnt];
 	pPixels2 = new BYTE[lBytesCnt];
-
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
-	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
-
-    BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-    BMI.bmiHeader.biWidth = lW;
-    BMI.bmiHeader.biHeight = lH;
-    BMI.bmiHeader.biPlanes = 1;
-    BMI.bmiHeader.biBitCount = BPP;
-    BMI.bmiHeader.biCompression = BI_RGB;
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels1, &BMI, DIB_RGB_COLORS);
-	GetDIBits(hTmpDC, hTmpBitmap, 0, lH, pPixels2, &BMI, DIB_RGB_COLORS);
+	CopyMemory(pPixels2, pPixels1, lBytesCnt);
 
 	dblFunc = (double)((2 * 3.14159265358979) / lFrequency);
 
@@ -1210,7 +925,7 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
     {
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			SetPixel(pPixels1, &BMI, i, j, crBkColor);
+			SetPixel(pPixels1, pBMI, i, j, crBkColor);
 		}
 	}
 
@@ -1236,7 +951,7 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
 			if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
 			if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
 
-			SetPixel(pPixels1, &BMI, i, j, GetPixel(pPixels2, &BMI, x, y));
+			SetPixel(pPixels1, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 		}
 		if (hWndCallback)
 		{
@@ -1246,183 +961,12 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
 		}
     }
 
-	StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels1, &BMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
-	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
 	delete[] pPixels1;
 	delete[] pPixels2;
+	delete pBMI;
+
 	return TRUE;
 }
 
-//Внутренняя вспомогательная функция
-//Параметры:
-//	pPixels			Указатель на массив пикселей
-//	pBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
-//	x				x-координата пикселя
-//	y				y-координата пикселя
-//Возвращаемое значение: пиксель по заданным координатам в BGR[A] в случае успеха,
-//GP_INVALIDPIXEL в случае ошибки
-static COLORREF GetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
-{
-	if ((x < 0) || (x >= pBMI->bmiHeader.biWidth)) return GP_INVALIDPIXEL;
-	if ((y < 0) || (y >= pBMI->bmiHeader.biHeight)) return GP_INVALIDPIXEL;
-
-	LPBYTE pPixel;
-	LONG lBPS, lDelta, lResult = GP_INVALIDPIXEL;
-	lBPS = (pBMI->bmiHeader.biWidth * (pBMI->bmiHeader.biBitCount >> 3));
-	if (pBMI->bmiHeader.biHeight < 0)
-	{
-		pPixel = pPixels;
-		lDelta = lBPS;
-	}
-	else
-	{
-		lDelta = -lBPS;
-		pPixel = pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
-	}
-	pPixel += y * lDelta;
-	switch (pBMI->bmiHeader.biBitCount)
-	{
-		case 24:
-			pPixel += x * 3;
-			lResult = BGR(pPixel[0], pPixel[1], pPixel[2]);
-			break;
-		case 32:
-			lResult = ((LONG *)pPixel)[x];
-			break;
-	}
-	return lResult;
-}
-
-//Внутренняя вспомогательная функция
-//Параметры:
-//	pPixels			Указатель на массив пикселей
-//	pBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
-//	x				x-координата пикселя
-//	y				y-координата пикселя
-//	crValue			Значение пикселя в BGR[A]
-//Функция не возвращает значений
-static void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValue)
-{
-	if ((x < 0) || (x >= pBMI->bmiHeader.biWidth)) return;
-	if ((y < 0) || (y >= pBMI->bmiHeader.biHeight)) return;
-
-	LPBYTE pPixel;
-	LONG lBPS, lDelta;
-	lBPS = (pBMI->bmiHeader.biWidth * (pBMI->bmiHeader.biBitCount >> 3));
-	if (pBMI->bmiHeader.biHeight < 0)
-	{
-		pPixel = pPixels;
-		lDelta = lBPS;
-	}
-	else
-	{
-		lDelta = -lBPS;
-		pPixel = pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
-	}
-	pPixel += y * lDelta;
-	switch (pBMI->bmiHeader.biBitCount)
-	{
-		case 24:
-			((RGBTRIPLE *)pPixel)[x] = *((RGBTRIPLE *)&crValue);
-			break;
-		case 32:
-			((LONG *)pPixel)[x] = crValue;
-			break;
-	}
-}
-
-//Внутренняя вспомогательная функция
-//Параметры:
-//	pData			Указатель на байтовый массив, который следует перевернуть
-//	dwDataSize		Размер байтового массива (в байтах)
-//Функция не возвращает значений
-static void ReverseBytes(LPBYTE pData, DWORD dwDataSize)
-{
-	LPBYTE pTmp = new BYTE[dwDataSize];
-	CopyMemory(pTmp, pData, dwDataSize);
-	for (DWORD i = 0; i < dwDataSize; i++) {
-		pData[i] = pTmp[(dwDataSize - 1) - i];
-	}
-	delete[] pTmp;
-}
-
-//Внутренняя вспомогательная функция
-//Параметры:
-//	tValue			Значение для проверки
-//	tMin			Минимально допустимое значение для tValue
-//	tMax			Максимально допустимое значение для tValue
-//Возвращаемое значение: исходное tValue, либо измененное tValue с учетом минимальной
-//и максимальной границ
-template <class T>
-static T CheckBounds(T tValue, T tMin, T tMax)
-{
-	if (tValue < tMin) tValue = tMin;
-	if (tValue > tMax) tValue = tMax;
-	return tValue;
-}
-
-//Внутренняя вспомогательная функция
-//Параметры:
-//	pArr			Указатель на массив для сортировки
-//	intArrSize		Размер массива
-//Функция не возвращает значений
-template <class T>
-static void SortArray_Shell(T *pArr, const int intArrSize)
-{
-	int i, j;
-	int intStep;
-	T tTmp;
-
-	intStep = (intArrSize >> 1);
-
-	while (intStep)
-	{
-		for (i = 0; i < (intArrSize - intStep); i++)
-		{
-			for (j = i; (j >= 0) && (pArr[j] > pArr[j + intStep]); j--)
-			{
-				tTmp = pArr[j];
-				pArr[j] = pArr[j + intStep];
-				pArr[j + intStep] = tTmp;
-			}                 
-		}
-		intStep >>= 1;
-	} 
-}
-
-#ifdef __USE_OPENCL__
-
-//Внутренняя вспомогательная функция
-//Параметры:
-//	strFileName		Имя файла с кодом OpenCL
-//	strSrcCode		Буфер для кода
-//Возвращает true в случае успеха, false в случае ошибки
-bool LoadOpenCLSources(std::string strFileName, std::string& strSrcCode)
-{
-    size_t szFileSize;
-
-	std::fstream fSrcCode(strFileName.c_str(), std::ios::in | std::ios::binary);
-
-    if (fSrcCode.is_open()) 
-	{
-        fSrcCode.seekg(0, std::ios::end);
-        szFileSize = (size_t)fSrcCode.tellg();
-        fSrcCode.seekg(0, std::ios::beg);
-
-		strSrcCode.resize(szFileSize, '\0');
-        fSrcCode.read((LPSTR)strSrcCode.c_str(), szFileSize);
-        fSrcCode.close();
-
-		return true;
-    }
-	else
-		strSrcCode = "";
-
-	return false;
-}
-
-#endif

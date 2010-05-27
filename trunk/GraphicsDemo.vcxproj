@@ -576,6 +576,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="GraphicsHF.cpp" />
     <ClCompile Include="StrParser.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -591,6 +592,7 @@
     <ClInclude Include="GDDefs.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="GraphicsDemo.h" />
+    <ClInclude Include="GraphicsHF.h" />
     <ClInclude Include="StrParser.h" />
     <ClInclude Include="Resource.h" />
   </ItemGroup>

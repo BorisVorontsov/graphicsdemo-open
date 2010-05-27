@@ -36,29 +36,4 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG lDirection, COLORREF crBkColor,
 		   LPRECT pRC, HWND hWndCallback = NULL);
 
-#define R_BGR(Color)			((BYTE)((Color) >> 16))
-#define G_BGR(Color)			((BYTE)(((WORD)(Color)) >> 8))
-#define B_BGR(Color)			((BYTE)(Color))
-
-#define BGR(B, G, R)			(((BYTE)B) | ((BYTE)G << 8) | ((BYTE)R << 16))
-
-#define GP_INVALIDPIXEL			0xFFFFFFFF
-
-static COLORREF GetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y);
-static void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValue);
-static void ReverseBytes(LPBYTE pData, DWORD dwDataSize);
-template <class T>
-	static T CheckBounds(T tValue, T tMin, T tMax);
-template <class T>
-	static void SortArray_Shell(T *pArr, const int intArrSize);
-
-#ifdef __USE_OPENCL__
-
-#ifndef _STRING_
-#include <string>
-#endif
-
-bool LoadOpenCLSources(std::string strFileName, std::string& strSrcCode);
-#endif
-
 #endif

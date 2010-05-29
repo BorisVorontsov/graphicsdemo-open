@@ -11,6 +11,8 @@ typedef struct tagONPROGRESSPARAMS
 	DWORD dwPercents;
 } ONPROGRESSPARAMS, *LPONPROGRESSPARAMS;
 
+BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*..., */LPRECT pRC, HWND hWndCallback = NULL);
+
 BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallback = NULL);
 #ifdef __USE_OPENCL__
 BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel);

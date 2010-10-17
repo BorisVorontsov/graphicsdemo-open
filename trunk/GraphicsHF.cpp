@@ -43,26 +43,26 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 
 	*ppPixels = new BYTE[*pBytesCnt];
 
-    hTmpDC = CreateCompatibleDC(hDC);
-    hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
-    hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
+	hTmpDC = CreateCompatibleDC(hDC);
+	hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
+	hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
 	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
 
 	*ppBMI = new BITMAPINFO;
 	ZeroMemory(*ppBMI, sizeof(BITMAPINFO));
 
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biWidth = lW;
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biHeight = lH;
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biPlanes = 1;
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biBitCount = BPP;
-    ((LPBITMAPINFO)*ppBMI)->bmiHeader.biCompression = BI_RGB;
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biWidth = lW;
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biHeight = lH;
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biPlanes = 1;
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biBitCount = BPP;
+	((LPBITMAPINFO)*ppBMI)->bmiHeader.biCompression = BI_RGB;
 
 	intScanLines = GetDIBits(hTmpDC, hTmpBitmap, 0, lH, *ppPixels, *ppBMI, DIB_RGB_COLORS);
 
 	SelectObject(hTmpDC, hOldBitmap);
-    DeleteObject(hTmpBitmap);
-    DeleteDC(hTmpDC);
+	DeleteObject(hTmpBitmap);
+	DeleteDC(hTmpDC);
 
 	return intScanLines;
 }
@@ -75,7 +75,7 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 //	pPixels			Массив пикселей
 //	pBMI			Указатель на структуру BITMAPINFO, с информацией об изображении
 //Возвращаемое значение: количество примененных строк растра в случае успеха, 0 в случае ошибки
-int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE pPixels, LPBITMAPINFO pBMI)
+int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPBITMAPINFO pBMI)
 {
 	int intScanLines;
 
@@ -95,23 +95,24 @@ int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE pPixels, LPBITMAPINFO pBM
 //	y				y-координата пикселя
 //Возвращаемое значение: пиксель по заданным координатам в BGR[A] в случае успеха,
 //GP_INVALIDPIXEL в случае ошибки
-COLORREF GetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
+COLORREF GetPixel(LPCBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
 {
 	if ((x < 0) || (x >= pBMI->bmiHeader.biWidth)) return GP_INVALIDPIXEL;
 	if ((y < 0) || (y >= pBMI->bmiHeader.biHeight)) return GP_INVALIDPIXEL;
 
 	LPBYTE pPixel;
-	LONG lBPS, lDelta, lResult = GP_INVALIDPIXEL;
+	LONG lBPS, lDelta;
+	ULONG lResult = GP_INVALIDPIXEL;
 	lBPS = (pBMI->bmiHeader.biWidth * (pBMI->bmiHeader.biBitCount >> 3));
 	if (pBMI->bmiHeader.biHeight < 0)
 	{
-		pPixel = pPixels;
+		pPixel = (LPBYTE)pPixels;
 		lDelta = lBPS;
 	}
 	else
 	{
 		lDelta = -lBPS;
-		pPixel = pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
+		pPixel = (LPBYTE)pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
 	}
 	pPixel += y * lDelta;
 	switch (pBMI->bmiHeader.biBitCount)
@@ -121,9 +122,10 @@ COLORREF GetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
 			lResult = BGR(pPixel[0], pPixel[1], pPixel[2]);
 			break;
 		case 32:
-			lResult = ((LONG *)pPixel)[x];
+			lResult = ((ULONG *)pPixel)[x];
 			break;
 	}
+
 	return lResult;
 }
 
@@ -160,8 +162,59 @@ void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValu
 			((RGBTRIPLE *)pPixel)[x] = *((RGBTRIPLE *)&crValue);
 			break;
 		case 32:
-			((LONG *)pPixel)[x] = crValue;
+			((ULONG *)pPixel)[x] = crValue;
 			break;
+	}
+}
+
+//Внутренняя вспомогательная функция
+//Параметры:
+//	pSrcPixels		Указатель на массив пикселей для масштабирования
+//	pSrcBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
+//	ppDstPixels		Указатель на переменную, принимающую результирующий массив пикселей
+//	ppDstBMI		Указатель на переменную, принимающую указатель на структуру BITMAPINFO, описывающую результирующий массив пикселей
+//	lNewW			Новая шинира изображения
+//	lNewH			Новая высота изображения
+//ВАЖНО: массив ppDstPixels и структура ppDstBMI выделяются функцией посредством new, и вызывающий отвественнен за
+//освобождение ресурсов, посредством вызова delete[] для ppDstPixels и delete для ppDstBMI
+//Функция не возвращает значений
+void ResampleImagePixels(LPCBYTE pSrcPixels, LPBITMAPINFO pSrcBMI, LPBYTE *ppDstPixels, LPBITMAPINFO *ppDstBMI, ULONG lNewW, ULONG lNewH)
+{
+	ULONG lNewSize = lNewW * lNewH * (pSrcBMI->bmiHeader.biBitCount >> 3);
+	*ppDstPixels = new BYTE[lNewSize];
+	memset(*ppDstPixels, 0, lNewSize);
+
+	*ppDstBMI = new BITMAPINFO;
+	memcpy(*ppDstBMI, pSrcBMI, sizeof(BITMAPINFO));
+
+	((LPBITMAPINFO)*ppDstBMI)->bmiHeader.biWidth = lNewW;
+	((LPBITMAPINFO)*ppDstBMI)->bmiHeader.biHeight = lNewH;
+
+	ULONG lSrcW = pSrcBMI->bmiHeader.biWidth;
+	ULONG lSrcH = pSrcBMI->bmiHeader.biHeight;
+
+	double dblXR = (double)lSrcW / (double)lNewW;
+	double dblYR = (double)lSrcH / (double)lNewH;
+	ULONG lSrcPos, lDstPos;
+
+	for (ULONG j = 0; j < lNewH; j++)
+	{
+		for (ULONG i = 0; i < lNewW; i++)
+		{
+
+			lSrcPos = ULONG((floor(j * dblYR) * lSrcW) + floor(i * dblXR));
+			lDstPos = (j * lNewW) + i;
+
+			switch (pSrcBMI->bmiHeader.biBitCount)
+			{
+				case 24:
+					((RGBTRIPLE *)*ppDstPixels)[lDstPos] = ((RGBTRIPLE *)pSrcPixels)[lSrcPos];
+					break;
+				case 32:
+					((ULONG *)*ppDstPixels)[lDstPos] = ((ULONG *)pSrcPixels)[lSrcPos];
+					break;
+			}
+		}
 	}
 }
 
@@ -253,22 +306,22 @@ void SortArray_Shell(T *pArr, const int intArrSize)
 //Возвращает true в случае успеха, false в случае ошибки
 bool LoadOpenCLSources(std::string strFileName, std::string& strSrcCode)
 {
-    size_t szFileSize;
+	size_t szFileSize;
 
 	std::fstream fSrcCode(strFileName.c_str(), std::ios::in | std::ios::binary);
 
-    if (fSrcCode.is_open()) 
+	if (fSrcCode.is_open()) 
 	{
-        fSrcCode.seekg(0, std::ios::end);
-        szFileSize = (size_t)fSrcCode.tellg();
-        fSrcCode.seekg(0, std::ios::beg);
+		fSrcCode.seekg(0, std::ios::end);
+		szFileSize = (size_t)fSrcCode.tellg();
+		fSrcCode.seekg(0, std::ios::beg);
 
 		strSrcCode.resize(szFileSize, '\0');
-        fSrcCode.read((LPSTR)strSrcCode.c_str(), szFileSize);
-        fSrcCode.close();
+		fSrcCode.read((LPSTR)strSrcCode.c_str(), szFileSize);
+		fSrcCode.close();
 
 		return true;
-    }
+	}
 	else
 		strSrcCode = "";
 

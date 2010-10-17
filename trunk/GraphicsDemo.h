@@ -32,7 +32,7 @@ INT_PTR CALLBACK ProgressWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 UINT WINAPI ImgProcThreadMain(LPVOID pArg);
 
 #ifndef __USE_GDIPLUS__
-void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName, HDC hDCSrc = NULL);
+void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName);
 #else
 void LoadPicture_Gdiplus(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName);
 #endif
@@ -59,9 +59,9 @@ bool GetEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid);
 BOOL GetAppPath(LPTSTR lpPath, DWORD dwPathLen, BOOL bAddQuotes = FALSE);
 
 SIZE_T GetOpenDialog(HINSTANCE hInstance, HWND hWnd, LPCTSTR lpTitle, LPTSTR lpFileName,
-					DWORD dwFNSize, LPCTSTR lpFilter, DWORD dwFilterIndex, BOOL bMultiSelect);
+					SIZE_T szFNSize, LPCTSTR lpFilter, DWORD dwFilterIndex, BOOL bMultiSelect);
 SIZE_T GetSaveDialog(HINSTANCE hInstance, HWND hWnd, LPCTSTR lpTitle, LPTSTR lpFileName,
-					DWORD dwFNSize, LPCTSTR lpFilter, LPDWORD pFilterIndex, LPCTSTR lpDefExt,
+					SIZE_T szFNSize, LPCTSTR lpFilter, LPDWORD pFilterIndex, LPCTSTR lpDefExt,
 					LPCTSTR lpInitialDir = NULL);
 
 /*

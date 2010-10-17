@@ -1,7 +1,7 @@
-/////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		"Graphics Demo"
-//		© BV (Boris Vorontsov, mailto:borisvorontsov@gmail.com)
-/////////////////////////////////////////////////////////////////
+//		© BV (Boris Vorontsov, mailto:borisvorontsov@gmail.com) и участники проекта
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_NON_CONFORMING_SWPRINTFS
@@ -48,7 +48,11 @@ static HINSTANCE hAppInstance;
 static volatile SYSTEM_INFO SI = {0};
 
 static TCHAR lpAppPath[MAX_PATH] = {0};
-static TCHAR lpPicPath[MAX_PATH] = {0};
+static TCHAR lpPic1Path[MAX_PATH] = {0};
+
+#ifdef __USE_GDIPLUS__
+static TCHAR lpPic2Path[MAX_PATH] = {0};
+#endif
 
 static LPCTSTR lpGDWndClass = TEXT("GraphicsDemo_WndClass");
 static HWND hMainWnd;
@@ -64,9 +68,9 @@ static UINT uImgProcThreadID;
 static volatile IMGPROCINFO IPI = {0};
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
-                       HINSTANCE hPrevInstance,
-                       LPTSTR lpCmdLine,
-                       int nCmdShow)
+					   HINSTANCE hPrevInstance,
+					   LPTSTR lpCmdLine,
+					   int nCmdShow)
 {
 	WNDCLASSEX wcex = {0};
 	MSG msg;
@@ -85,13 +89,19 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	GetSystemInfo((LPSYSTEM_INFO)&SI);
 
 	GetAppPath(lpAppPath, MAX_PATH);
-	SP_ExtractDirectory(lpAppPath, lpPicPath);
-	SP_AddDirSep(lpPicPath, lpPicPath);
+	SP_ExtractDirectory(lpAppPath, lpPic1Path);
+	SP_AddDirSep(lpPic1Path, lpPic1Path);
 
 #ifndef __USE_GDIPLUS__
-	_tcscat(lpPicPath, TEXT("Sample.bmp"));
+	_tcscat(lpPic1Path, TEXT("Sample.bmp"));
 #else
-	_tcscat(lpPicPath, TEXT("Sample.jpg"));
+	_tcscat(lpPic1Path, TEXT("Sample.jpg"));
+#endif
+
+#ifdef __USE_GDIPLUS__
+	SP_ExtractDirectory(lpAppPath, lpPic2Path);
+	SP_AddDirSep(lpPic2Path, lpPic2Path);
+	_tcscat(lpPic2Path, TEXT("Ladybug.png"));
 #endif
 
 	if (SI.dwNumberOfProcessors >= 2)
@@ -138,6 +148,10 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableMenuItem(GetMenu(hWnd), IDM_FILTERS_BLUR_OCL, MF_BYCOMMAND | MF_ENABLED);
 #endif
 
+#ifdef __USE_GDIPLUS__
+			EnableMenuItem(GetMenu(hWnd), IDM_FILTERS_ALPHABLEND, MF_BYCOMMAND | MF_ENABLED);
+#endif
+
 			PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_CLEAR, 0), 0);
 			return TRUE;
 		case WM_ERASEBKGND:
@@ -167,11 +181,11 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						if (lpODFilter[i] == '|')
 							lpODFilter[i] = '\0';
 					}
-					_tcscpy(lpODFile, lpPicPath);
+					_tcscpy(lpODFile, lpPic1Path);
 					if (GetOpenDialog(hAppInstance, hWnd, TEXT("Load Picture"), lpODFile,
 						MAX_PATH - 1, lpODFilter, 1, FALSE))
 					{
-						_tcscpy(lpPicPath, lpODFile);
+						_tcscpy(lpPic1Path, lpODFile);
 						PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_CLEAR, 0), 0);
 					}
 					break;
@@ -194,7 +208,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 							lpSDFilter[i] = '\0';
 					}
 
-					SP_ExtractName(lpPicPath, lpSDFile);
+					SP_ExtractName(lpPic1Path, lpSDFile);
 					SP_ExtractLeftPart(lpSDFile, lpSDFile, '.');
 
 					if (GetSaveDialog(hAppInstance, hWnd, TEXT("Save Picture As"), lpSDFile,
@@ -249,7 +263,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					hTmpBitmap = CreateCompatibleBitmap(hDC, GD_MAX_CANV_WIDTH, GD_MAX_CANV_HEIGHT);
 					hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
 					
-					LoadPicture(GetDlgItem(hWnd, IDC_STCCANVAS), hTmpDC, lpPicPath);
+					LoadPicture(GetDlgItem(hWnd, IDC_STCCANVAS), hTmpDC, lpPic1Path);
 					
 					GetClientRect(GetDlgItem(hWnd, IDC_STCCANVAS), &rcCanvas);
 					BitBlt(hDBDC, 0, 0, rcCanvas.right, rcCanvas.bottom, hTmpDC, 0, 0, SRCCOPY);
@@ -262,13 +276,20 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				case IDM_HELP_ABOUT:
 				{
+					TCHAR lpAboutString[256] = {0};
+					TCHAR lpTmp[128];
+					LoadString(hAppInstance, IDS_ABOUTSTRING1, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
+					_stprintf(lpAboutString, lpTmp, APP_NAME);
+					LoadString(hAppInstance, IDS_ABOUTSTRING2, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
+					_tcscat(lpAboutString, lpTmp);
+					
 					MSGBOXPARAMS MBP = {0};
 					MBP.cbSize = sizeof(MBP);
 					MBP.hInstance = hAppInstance;
 					MBP.dwStyle = MB_USERICON | MB_OK;
 					MBP.hwndOwner = hWnd;
 					MBP.lpszIcon = MAKEINTRESOURCE(IDI_ICON);
-					MBP.lpszText = TEXT("Copyright © BV, 2007 - 2010 (borisvorontsov@gmail.com)");
+					MBP.lpszText = lpAboutString;
 					MBP.lpszCaption = APP_NAME;
 					MessageBoxIndirect(&MBP);
 					break;
@@ -408,11 +429,11 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 	switch (IPI.dwFltIndex)
 	{
 		case IDM_FILTERS_BLUR:
-			Blur(hDC, rcPicture.right, rcPicture.bottom, 24, &rcCanvas, IPI.hWndProgress);
+			Blur(hDC, rcPicture.right, rcPicture.bottom, 16, &rcCanvas, IPI.hWndProgress);
 			break;
 #ifdef __USE_OPENCL__
 		case IDM_FILTERS_BLUR_OCL:
-			Blur_OCL(hDC, rcPicture.right, rcPicture.bottom, 24);
+			Blur_OCL(hDC, rcPicture.right, rcPicture.bottom, 16);
 			break;
 #endif
 		case IDM_FILTERS_RGBBALANCE:
@@ -434,6 +455,40 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 		case IDM_FILTERS_CONTRAST:
 			Contrast(hDC, rcPicture.right, rcPicture.bottom, 32, &rcCanvas, IPI.hWndProgress);
 			break;
+#ifdef __USE_GDIPLUS__
+		case IDM_FILTERS_ALPHABLEND:
+		{
+			Graphics *pGraphics = NULL;
+			Image *pImage = new Image(lpPic2Path);
+			LONG lW = 0, lH = 0;
+			HDC hTmpDC;
+			HBITMAP hTmpBmp, hOldBmp;
+	
+			if (pImage->GetLastStatus() == Ok)
+			{
+				lW = pImage->GetWidth();
+				lH = pImage->GetHeight();
+
+				hTmpDC = CreateCompatibleDC(hDC);
+				hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
+				hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
+				pGraphics = new Graphics(hTmpDC);
+				pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
+
+				RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
+					(rcCanvas.bottom + (lH * 2)) >> 1};
+				AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
+
+				DeleteObject(SelectObject(hTmpDC, hOldBmp));
+				DeleteDC(hTmpDC);
+
+				delete pGraphics;
+			}
+			delete pImage;
+
+			break;
+		}
+#endif
 		case IDM_TRANSFORMATION_SHEAR:
 			Shear(hDC, rcPicture.right, rcPicture.bottom, -48, 0, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
 			break;
@@ -475,53 +530,53 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 #ifndef __USE_GDIPLUS__
 
-void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName, HDC hDCSrc)
+//Загрузка изображения посредством GDI
+//Парметры:
+//	hWndCanvas		окно, для которого предназначено изображение. Функция автоматически изменит размер окна под размер изображения
+//	hDCCanvas		DC, на котором будет отрисовано изображение. Если передать NULL, функция использует DC окна hWndCanvas
+//	lpFileName		имя файла изображения
+//Функция не возвращает значений
+void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName)
 {
 	LONG lW, lH;
 	HDC hDCCanvas1 = (hDCCanvas)?hDCCanvas:GetDC(hWndCanvas);
 
-	if (hDCSrc == NULL)
-	{
-		HBITMAP hBitmap, hOldBitmap;
-		BITMAP BMD = {0};
-		hBitmap = (HBITMAP)LoadImage(hAppInstance, lpFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-		GetObject(hBitmap, sizeof(BMD), &BMD);
+	HBITMAP hBitmap, hOldBitmap;
+	BITMAP BMD = {0};
+	hBitmap = (HBITMAP)LoadImage(hAppInstance, lpFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	GetObject(hBitmap, sizeof(BMD), &BMD);
 		
-		lW = BMD.bmWidth;
-		lH = BMD.bmHeight;
-		if (lW > GD_MAX_CANV_WIDTH) lW = GD_MAX_CANV_WIDTH;
-		if (lH > GD_MAX_CANV_HEIGHT) lH = GD_MAX_CANV_HEIGHT;
+	lW = BMD.bmWidth;
+	lH = BMD.bmHeight;
+	if (lW > GD_MAX_CANV_WIDTH) lW = GD_MAX_CANV_WIDTH;
+	if (lH > GD_MAX_CANV_HEIGHT) lH = GD_MAX_CANV_HEIGHT;
 
-		IPI.rcPicture.left = 0;
-		IPI.rcPicture.top = 0;
-		IPI.rcPicture.right = lW;
-		IPI.rcPicture.bottom = lH;
+	IPI.rcPicture.left = 0;
+	IPI.rcPicture.top = 0;
+	IPI.rcPicture.right = lW;
+	IPI.rcPicture.bottom = lH;
 
+	if (hWndCanvas)
 		SetWindowPos(hWndCanvas, NULL, GD_MIN_CANV_LEFT, GD_MIN_CANV_TOP, lW, lH, SWP_NOZORDER);
 
-		hDCSrc = CreateCompatibleDC(hDCCanvas1);
-		hOldBitmap = (HBITMAP)SelectObject(hDCSrc, hBitmap);
+	hDCSrc = CreateCompatibleDC(hDCCanvas1);
+	hOldBitmap = (HBITMAP)SelectObject(hDCSrc, hBitmap);
 
-		SetStretchBltMode(hDCCanvas1, STRETCH_HALFTONE);
-		StretchBlt(hDCCanvas1, 0, 0, lW, lH, hDCSrc, 0, 0, BMD.bmWidth, BMD.bmHeight, SRCCOPY);
+	SetStretchBltMode(hDCCanvas1, STRETCH_HALFTONE);
+	StretchBlt(hDCCanvas1, 0, 0, lW, lH, hDCSrc, 0, 0, BMD.bmWidth, BMD.bmHeight, SRCCOPY);
 
-		DeleteObject(SelectObject(hDCSrc, hOldBitmap));
-		DeleteDC(hDCSrc);
-	}
-	else
-	{
-		RECT rcCanvas = {0};
-		GetClientRect(hWndCanvas, &rcCanvas);
-		lW = rcCanvas.right;
-		lH = rcCanvas.bottom;
-
-		BitBlt(hDCCanvas1, 0, 0, lW, lH, hDCSrc, 0, 0, SRCCOPY);
-	}
+	DeleteObject(SelectObject(hDCSrc, hOldBitmap));
+	DeleteDC(hDCSrc);
 
 	if (!hDCCanvas)
 		ReleaseDC(hWndCanvas, hDCCanvas1);
 }
 
+//Сохранение изображения посредством GDI
+//Параметры:
+//	hDCCanvas		DC, с которого функция должна взять изображение
+//	lpFileName		имя файла для сохранения изображения
+//Функция не возвращает значений
 void SavePicture_Std(HDC hDCCanvas, LPCTSTR lpFileName)
 {
 	HANDLE hFile;
@@ -591,8 +646,8 @@ void SavePicture_Std(HDC hDCCanvas, LPCTSTR lpFileName)
 //Функция не возвращает значений
 void LoadPicture_Gdiplus(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName)
 {
-	Graphics *pGraphics = 0;
-	Image *pImage = 0;
+	Graphics *pGraphics = NULL;
+	Image *pImage = NULL;
 	LONG lW = 0, lH = 0;
 
 	HDC hDCCanvas1 = (hDCCanvas)?hDCCanvas:GetDC(hWndCanvas);
@@ -612,7 +667,8 @@ void LoadPicture_Gdiplus(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName)
 		IPI.rcPicture.right = lW;
 		IPI.rcPicture.bottom = lH;
 
-		SetWindowPos(hWndCanvas, NULL, GD_MIN_CANV_LEFT, GD_MIN_CANV_TOP, lW, lH, SWP_NOZORDER);
+		if (hWndCanvas)
+			SetWindowPos(hWndCanvas, NULL, GD_MIN_CANV_LEFT, GD_MIN_CANV_TOP, lW, lH, SWP_NOZORDER);
 
 		Rect rcImage(0, 0, IPI.rcPicture.right, IPI.rcPicture.bottom);
 		pGraphics->DrawImage(pImage, rcImage);
@@ -634,13 +690,13 @@ void SavePicture_Gdiplus(HDC hDCCanvas, LPCTSTR lpFileName)
 	HDC hCDC;
 	HBITMAP hTmpBitmap, hOldBitmap;
 	Image *pImage;
-    CLSID EncClsid;
-    EncoderParameters *pEncParams = NULL;
+	CLSID EncClsid;
+	EncoderParameters *pEncParams = NULL;
 	ULONG uEncParamsSize;
 	TCHAR lpExt[64] = {0};
 	LPTSTR lpFmt;
 
-    hCDC = CreateCompatibleDC(hDCCanvas);
+	hCDC = CreateCompatibleDC(hDCCanvas);
 	hTmpBitmap = CreateCompatibleBitmap(hDCCanvas, GD_MAX_CANV_WIDTH, GD_MAX_CANV_HEIGHT);
 	hOldBitmap = (HBITMAP)SelectObject(hCDC, hTmpBitmap);
 
@@ -663,7 +719,7 @@ void SavePicture_Gdiplus(HDC hDCCanvas, LPCTSTR lpFileName)
 	else
 		lpFmt = TEXT("image/bmp");
 
-    GetEncoderClsid(lpFmt, &EncClsid);
+	GetEncoderClsid(lpFmt, &EncClsid);
 
 	Bitmap TmpBmp(1, 1);
 	uEncParamsSize = TmpBmp.GetEncoderParameterListSize(&EncClsid);
@@ -702,14 +758,14 @@ void SavePicture_Gdiplus(HDC hDCCanvas, LPCTSTR lpFileName)
 			pEncParams->Count = 0;
 	}
 
-    pImage->Save(lpFileName, &EncClsid, pEncParams);
+	pImage->Save(lpFileName, &EncClsid, pEncParams);
 
 	DeleteObject(SelectObject(hCDC, hOldBitmap));
 	DeleteDC(hCDC);
 
 	if (pEncParams)
 		delete[] pEncParams;
-    delete pImage;
+	delete pImage;
 }
 
 //Вспомогательная функция, для получения UID encoder'а по формату изображения
@@ -722,22 +778,22 @@ bool GetEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid)
    GetImageEncodersSize(&uNumOfEncs, &uEncArrSize);
 
    if(uEncArrSize == 0)
-      return false;
+	  return false;
 
    pImageCodecInfo = (ImageCodecInfo*)new BYTE[uEncArrSize];
    if(pImageCodecInfo == NULL)
-      return false;
+	  return false;
 
    GetImageEncoders(uNumOfEncs, uEncArrSize, pImageCodecInfo);
 
    for(UINT i = 0; i < uNumOfEncs; i++)
    {
-      if(_tcscmp(pImageCodecInfo[i].MimeType, lpFmt) == 0)
-      {
-         *pClsid = pImageCodecInfo[i].Clsid;
-         delete[] pImageCodecInfo;
-         return true;
-      }    
+	  if(_tcscmp(pImageCodecInfo[i].MimeType, lpFmt) == 0)
+	  {
+		 *pClsid = pImageCodecInfo[i].Clsid;
+		 delete[] pImageCodecInfo;
+		 return true;
+	  }    
    }
 
    delete[] pImageCodecInfo;
@@ -749,7 +805,7 @@ bool GetEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid)
 //Вспомогательная функция, для получения директории программы
 BOOL GetAppPath(LPTSTR lpPath, DWORD dwPathLen, BOOL bAddQuotes)
 {
-    LPTSTR lpBuff = new TCHAR[dwPathLen];
+	LPTSTR lpBuff = new TCHAR[dwPathLen];
 
 	if (GetModuleFileName(hAppInstance, lpBuff, dwPathLen) == 0) {
 		delete[] lpBuff;
@@ -771,7 +827,7 @@ SIZE_T GetOpenDialog(HINSTANCE hInstance,
 					HWND hWnd,
 					LPCTSTR lpTitle,
 					LPTSTR lpFileName,
-					DWORD dwFNSize,
+					SIZE_T szFNSize,
 					LPCTSTR lpFilter,
 					DWORD dwFilterIndex,
 					BOOL bMultiSelect)
@@ -786,7 +842,7 @@ SIZE_T GetOpenDialog(HINSTANCE hInstance,
 		OFN.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
 	OFN.lpstrTitle = lpTitle;
 	OFN.lpstrFile = lpFileName;
-	OFN.nMaxFile = dwFNSize;
+	OFN.nMaxFile = szFNSize;
 	OFN.lpstrFilter = lpFilter;
 	OFN.nFilterIndex = dwFilterIndex;
 
@@ -801,7 +857,7 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 					HWND hWnd,
 					LPCTSTR lpTitle,
 					LPTSTR lpFileName,
-					DWORD dwFNSize,
+					SIZE_T szFNSize,
 					LPCTSTR lpFilter,
 					LPDWORD pFilterIndex,
 					LPCTSTR lpDefExt,
@@ -816,7 +872,7 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 		OFN_NOREADONLYRETURN | OFN_EXPLORER;
 	OFN.lpstrTitle = lpTitle;
 	OFN.lpstrFile = lpFileName;
-	OFN.nMaxFile = dwFNSize;
+	OFN.nMaxFile = szFNSize;
 	OFN.lpstrFilter = lpFilter;
 	OFN.nFilterIndex = *pFilterIndex;
 	OFN.lpstrDefExt = lpDefExt;

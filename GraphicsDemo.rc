@@ -13,6 +13,36 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_NEUTRAL
+#pragma code_page(1251)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ODSTDFILTER         "BMP files (*.bmp)|*.bmp|All files (*.*)|*.*|"
+    IDS_ODGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|WMF files (*.wmf)|*.wmf|EMF files (*.emf)|*.emf|All files (*.*)|*.*|"
+    IDS_SDSTDFILTER         "BMP files (*.bmp)|*.bmp|"
+    IDS_SDGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ABOUTSTRING1        "Открытый проект ""%s""\n"
+    IDS_ABOUTSTRING2        "Авторские права © BV и участники проекта, 2007 - 2010, для Sources.ru"
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Russian (Russia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
@@ -166,6 +196,8 @@ BEGIN
         MENUITEM "&Edge Detection",             IDM_FILTERS_EDGEDETECTION,MFT_STRING,MFS_ENABLED
         MENUITEM "&Median",                     IDM_FILTERS_MEDIAN,MFT_STRING,MFS_ENABLED
         MENUITEM "&Contrast",                   IDM_FILTERS_CONTRAST,MFT_STRING,MFS_ENABLED
+        MENUITEM MFT_SEPARATOR
+        MENUITEM "&Alpha Blend",                IDM_FILTERS_ALPHABLEND,MFT_STRING,MFS_GRAYED
     END
     POPUP "&Transformation",                65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
     BEGIN
@@ -189,20 +221,6 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON                ICON                    "GD_ICON.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE
-BEGIN
-    IDS_ODSTDFILTER         "BMP files (*.bmp)|*.bmp|All files (*.*)|*.*|"
-    IDS_ODGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|WMF files (*.wmf)|*.wmf|EMF files (*.emf)|*.emf|All files (*.*)|*.*|"
-    IDS_SDSTDFILTER         "BMP files (*.bmp)|*.bmp|"
-    IDS_SDGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|"
-END
-
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

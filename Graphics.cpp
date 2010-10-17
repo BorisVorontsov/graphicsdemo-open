@@ -50,7 +50,7 @@ BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., 
 	LPBYTE pPixels = NULL;
 	ULONG lBytesCnt = 0;
 	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lR, lG, lB;
+	ULONG lColor, lA, lR, lG, lB;
 	LONG i, j;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
@@ -65,19 +65,20 @@ BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., 
 
 	//-----------------------------------------------------------------------------------------------
 	//Тело фильтра
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lR = R_BGR(lColor);
-			lG = G_BGR(lColor);
-			lB = B_BGR(lColor);
+			lA = A_BGRA(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
 			//...
 
-			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+			SetPixel(pPixels, pBMI, i, j, BGRA(lB, lG, lR, lA));
 		}
 		//Отображение статуса выполнения (опциональный блок)
 		if (hWndCallback)
@@ -86,7 +87,7 @@ BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., 
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 	//-----------------------------------------------------------------------------------------------
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
@@ -95,6 +96,110 @@ BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., 
 	delete pBMI;
 
 	return TRUE;
+}
+
+BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, ULONG lSrcH, BYTE bAlpha, ALPHAMODE AlphaMode, LPRECT pRC, HWND hWndCallback)
+{
+	LPBYTE pSrcPixels = NULL, pDstPixels = NULL;
+	ULONG lSrcBytesCnt = 0, lDstBytesCnt = 0;
+	LPBITMAPINFO pSrcBMI = NULL, pDstBMI = NULL;
+	ULONG lSrcC, lDstC, lR, lG, lB;
+	LONG i, j;
+	BOOL bResult;
+
+	volatile ONPROGRESSPARAMS ONPP = {0};
+
+	//Получаем пиксели конечного изображения
+	if (!GetImagePixels(hDstDC, lDstW, lDstH, &pDstPixels, &lDstBytesCnt, &pDstBMI)) {
+		bResult = FALSE;
+		goto AB_Exit;
+	}
+
+	//Получаем пиксели исходного изображения
+	if (!GetImagePixels(hSrcDC, lSrcW, lSrcH, &pSrcPixels, &lSrcBytesCnt, &pSrcBMI)) {
+		bResult = FALSE;
+		goto AB_Exit;
+	}
+
+	//Не работаем с изображениями ниже 24 бит на пиксель
+	if ((pDstBMI->bmiHeader.biBitCount < 24) || (pSrcBMI->bmiHeader.biBitCount < 24)) {
+		bResult = FALSE;
+		goto AB_Exit;
+	}
+
+	//Если размеры исходного изображения отличаются от заданной области применения фильтра, выполняем мастабирование исходного изображения
+	if ((lSrcW != (pRC->right - pRC->left)) || (lSrcH != (pRC->bottom - pRC->top)))
+	{
+		LPBYTE pTmpPixels;
+		LPBITMAPINFO pTmpBMI;
+		ResampleImagePixels(pSrcPixels, pSrcBMI, &pTmpPixels, &pTmpBMI, (pRC->right - pRC->left), (pRC->bottom - pRC->top));
+		delete[] pSrcPixels;
+		delete pSrcBMI;
+		pSrcPixels = pTmpPixels;
+		pSrcBMI = pTmpBMI;
+		lSrcW = pSrcBMI->bmiHeader.biWidth;
+		lSrcH = pSrcBMI->bmiHeader.biHeight;
+	}
+
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
+		for (i = pRC->left; i < pRC->right; i++)
+		{
+			lDstC = GetPixel(pDstPixels, pDstBMI, i, j);
+			lSrcC = GetPixel(pSrcPixels, pSrcBMI, i - pRC->left, j - pRC->top);
+
+			switch (AlphaMode)
+			{
+				case AM_ALPHA_IGNORE:
+					lR = (R_BGRA(lDstC) * (255 - A_BGRA(lSrcC)) + R_BGRA(lSrcC) * A_BGRA(lSrcC)) / 255;
+					lG = (G_BGRA(lDstC) * (255 - A_BGRA(lSrcC)) + G_BGRA(lSrcC) * A_BGRA(lSrcC)) / 255;
+					lB = (B_BGRA(lDstC) * (255 - A_BGRA(lSrcC)) + B_BGRA(lSrcC) * A_BGRA(lSrcC)) / 255;
+					break;
+				case AM_ALPHA_ADD:
+					lR = (R_BGRA(lDstC) * (255 - min(255, (A_BGRA(lSrcC) + bAlpha))) + R_BGRA(lSrcC) * min(255, (A_BGRA(lSrcC) + bAlpha))) / 255;
+					lG = (G_BGRA(lDstC) * (255 - min(255, (A_BGRA(lSrcC) + bAlpha))) + G_BGRA(lSrcC) * min(255, (A_BGRA(lSrcC) + bAlpha))) / 255;
+					lB = (B_BGRA(lDstC) * (255 - min(255, (A_BGRA(lSrcC) + bAlpha))) + B_BGRA(lSrcC) * min(255, (A_BGRA(lSrcC) + bAlpha))) / 255;
+					break;
+				case AM_ALPHA_SUBTRACT:
+					lR = (R_BGRA(lDstC) * (255 - max(0, (A_BGRA(lSrcC) - bAlpha))) + R_BGRA(lSrcC) * max(0, (A_BGRA(lSrcC) - bAlpha))) / 255;
+					lG = (G_BGRA(lDstC) * (255 - max(0, (A_BGRA(lSrcC) - bAlpha))) + G_BGRA(lSrcC) * max(0, (A_BGRA(lSrcC) - bAlpha))) / 255;
+					lB = (B_BGRA(lDstC) * (255 - max(0, (A_BGRA(lSrcC) - bAlpha))) + B_BGRA(lSrcC) * max(0, (A_BGRA(lSrcC) - bAlpha))) / 255;
+					break;
+				case AM_ALPHA_REPLACE:
+					lR = (R_BGRA(lDstC) * (255 - bAlpha) + R_BGRA(lSrcC) * bAlpha) / 255;
+					lG = (G_BGRA(lDstC) * (255 - bAlpha) + G_BGRA(lSrcC) * bAlpha) / 255;
+					lB = (B_BGRA(lDstC) * (255 - bAlpha) + B_BGRA(lSrcC) * bAlpha) / 255;
+					break;
+			}
+
+			SetPixel(pDstPixels, pDstBMI, i, j, BGRA(lB, lG, lR, A_BGRA(lDstC)));
+		}
+
+		if (hWndCallback)
+		{
+			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
+			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
+				(LPARAM)&ONPP);
+		}
+	}
+
+	SetImagePixels(hDstDC, lDstW, lDstH, pDstPixels, pDstBMI);
+
+	bResult = TRUE;
+
+AB_Exit:
+
+	if (pDstPixels)
+		delete[] pDstPixels;
+	if (pDstBMI)
+		delete pDstBMI;
+
+	if (pSrcPixels)
+		delete[] pSrcPixels;
+	if (pSrcBMI)
+		delete pSrcBMI;
+
+	return bResult;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -157,9 +262,9 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 				for (y3 = y1; y3 <= y2; y3++)
 				{
 					lColor = GetPixel(pPixels, pBMI, x3, y3);
-					lR += R_BGR(lColor);
-					lG += G_BGR(lColor);
-					lB += B_BGR(lColor);
+					lR += R_BGRA(lColor);
+					lG += G_BGRA(lColor);
+					lB += B_BGRA(lColor);
 				}
 			}
 			lPixels = (x2 - x1 + 1) * (y2 - y1 + 1);
@@ -207,22 +312,22 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 	std::string strExePath, strSrcPath, strSrcCode;
 	cl::vector<cl::Event> vEvents(2);
 
-    //Инициализация OpenCL...
+	//Инициализация OpenCL...
 	//Получаем список платформ, поддерживающих OpenCL
-    cl::vector<cl::Platform> vPlatforms;
-    cl::Platform::get(&vPlatforms);
-    if (vPlatforms.size() == 0) {
-        MessageBox(NULL, TEXT("Платформ OpenCL не обнаружено!"), TEXT("Ошибка"), MB_ICONEXCLAMATION);
+	cl::vector<cl::Platform> vPlatforms;
+	cl::Platform::get(&vPlatforms);
+	if (vPlatforms.size() == 0) {
+		MessageBox(NULL, TEXT("Платформ OpenCL не обнаружено!"), TEXT("Ошибка"), MB_ICONEXCLAMATION);
 		return FALSE;
-    }
+	}
 
 	//Берем первую платформу
 	cl_context_properties cpContextProps[3] = 
-        {CL_CONTEXT_PLATFORM, (cl_context_properties)(vPlatforms[0])(), 0};
+		{CL_CONTEXT_PLATFORM, (cl_context_properties)(vPlatforms[0])(), 0};
 
 	//Пытаемся создать среду исполнения на основе графического процессора
-    cl::Context cContext(CL_DEVICE_TYPE_GPU, cpContextProps, NULL, NULL, &intErr);
-    if (intErr != CL_SUCCESS) {
+	cl::Context cContext(CL_DEVICE_TYPE_GPU, cpContextProps, NULL, NULL, &intErr);
+	if (intErr != CL_SUCCESS) {
 		TCHAR lpMsg[255] = {0};
 		TCHAR lpPfName[128] = {0}, lpPfVendor[128] = {0};
 #ifdef UNICODE
@@ -236,9 +341,9 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 #endif
 		_stprintf(lpMsg, TEXT("Не удалось создать среду исполнения с устройством GPU на базе выбранной платформы ( %s, %s )!\nВсего найдено платформ: %i"),
 			lpPfName, lpPfVendor, vPlatforms.size());
-        MessageBox(NULL, lpMsg, TEXT("Ошибка"), MB_ICONEXCLAMATION);
+		MessageBox(NULL, lpMsg, TEXT("Ошибка"), MB_ICONEXCLAMATION);
 		return FALSE;
-    }
+	}
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)
@@ -361,15 +466,15 @@ BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG 
 		return FALSE;
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lR = R_BGR(lColor);
-			lG = G_BGR(lColor);
-			lB = B_BGR(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
 			lR = (ULONG)CheckBounds((LONG)(lR += lROffset), (LONG)0, (LONG)255);
 			lG = (ULONG)CheckBounds((LONG)(lG += lGOffset), (LONG)0, (LONG)255);
@@ -383,7 +488,7 @@ BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG 
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
@@ -418,16 +523,16 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 		return FALSE;
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			lColor = GetPixel(pPixels, pBMI, i, j);
 
 			//BGR -> RGB
-			lR = R_BGR(lColor);
-			lG = G_BGR(lColor);
-			lB = B_BGR(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
 			lS = (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
 
@@ -440,7 +545,7 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
@@ -476,15 +581,15 @@ BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, H
 		return FALSE;
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lR = R_BGR(lColor);
-			lG = G_BGR(lColor);
-			lB = B_BGR(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
 			lR = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lR / 255.0, 1.0 / dblGamma))
 				+ 0.5), (LONG)0, (LONG)255);
@@ -501,7 +606,7 @@ BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, H
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
@@ -541,15 +646,15 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 		return FALSE;
 	}
 	pPixels2 = new BYTE[lBytesCnt];
-	CopyMemory(pPixels2, pPixels1, lBytesCnt);
+	memcpy(pPixels2, pPixels1, lBytesCnt);
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-            x = (i == pRC->left)?pRC->left + 1:i;
+			x = (i == pRC->left)?pRC->left + 1:i;
 			x = (i < (pRC->right - 1))?x:i - 1;
-            y = (j == pRC->top)?pRC->top + 1:j;
+			y = (j == pRC->top)?pRC->top + 1:j;
 			y = (j < (pRC->bottom - 1))?y:j - 1;
 
 			lColor[0] = GetPixel(pPixels2, pBMI, x, y);
@@ -562,15 +667,15 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 			lColor[7] = GetPixel(pPixels2, pBMI, x - 1, y);
 			lColor[8] = GetPixel(pPixels2, pBMI, x - 1, y - 1);
 
-			lR = (-1 * R_BGR(lColor[1]) - 1 * R_BGR(lColor[2]) - 1 * R_BGR(lColor[3]) - 1 * R_BGR(lColor[4])
-				 - 1 * R_BGR(lColor[5]) - 1 * R_BGR(lColor[6]) - 1 * R_BGR(lColor[7]) - 1 * R_BGR(lColor[8])
-				 + (8 * R_BGR(lColor[0]))) / 1;// + GetRValue(crBkColor);
-			lG = (-1 * G_BGR(lColor[1]) - 1 * G_BGR(lColor[2]) - 1 * G_BGR(lColor[3]) - 1 * G_BGR(lColor[4])
-				 - 1 * G_BGR(lColor[5]) - 1 * G_BGR(lColor[6]) - 1 * G_BGR(lColor[7]) - 1 * G_BGR(lColor[8])
-				 + (8 * G_BGR(lColor[0]))) / 1;// + GetGValue(crBkColor);
-			lB = (-1 * B_BGR(lColor[1]) - 1 * B_BGR(lColor[2]) - 1 * B_BGR(lColor[3]) - 1 * B_BGR(lColor[4])
-				 - 1 * B_BGR(lColor[5]) - 1 * B_BGR(lColor[6]) - 1 * B_BGR(lColor[7]) - 1 * B_BGR(lColor[8])
-				 + (8 * B_BGR(lColor[0]))) / 1;// + GetBValue(crBkColor);
+			lR = (-1 * R_BGRA(lColor[1]) - 1 * R_BGRA(lColor[2]) - 1 * R_BGRA(lColor[3]) - 1 * R_BGRA(lColor[4])
+				 - 1 * R_BGRA(lColor[5]) - 1 * R_BGRA(lColor[6]) - 1 * R_BGRA(lColor[7]) - 1 * R_BGRA(lColor[8])
+				 + (8 * R_BGRA(lColor[0]))) / 1;// + GetRValue(crBkColor);
+			lG = (-1 * G_BGRA(lColor[1]) - 1 * G_BGRA(lColor[2]) - 1 * G_BGRA(lColor[3]) - 1 * G_BGRA(lColor[4])
+				 - 1 * G_BGRA(lColor[5]) - 1 * G_BGRA(lColor[6]) - 1 * G_BGRA(lColor[7]) - 1 * G_BGRA(lColor[8])
+				 + (8 * G_BGRA(lColor[0]))) / 1;// + GetGValue(crBkColor);
+			lB = (-1 * B_BGRA(lColor[1]) - 1 * B_BGRA(lColor[2]) - 1 * B_BGRA(lColor[3]) - 1 * B_BGRA(lColor[4])
+				 - 1 * B_BGRA(lColor[5]) - 1 * B_BGRA(lColor[6]) - 1 * B_BGRA(lColor[7]) - 1 * B_BGRA(lColor[8])
+				 + (8 * B_BGRA(lColor[0]))) / 1;// + GetBValue(crBkColor);
 
 			lR = (ULONG)CheckBounds((LONG)lR, (LONG)0, (LONG)255);
 			lG = (ULONG)CheckBounds((LONG)lG, (LONG)0, (LONG)255);
@@ -584,7 +689,7 @@ BOOL EdgeDetection(HDC hDC, ULONG lW, ULONG lH, COLORREF crBkColor, LPRECT pRC, 
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
@@ -646,9 +751,9 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 				for (y3 = y1; y3 <= y2; y3++)
 				{
 					lColor = GetPixel(pPixels, pBMI, x3, y3);
-					pRGBArr[n] = R_BGR(lColor);
-					(pRGBArr + lPixels)[n] = G_BGR(lColor);
-					(pRGBArr + (lPixels << 1))[n] = B_BGR(lColor);
+					pRGBArr[n] = R_BGRA(lColor);
+					(pRGBArr + lPixels)[n] = G_BGRA(lColor);
+					(pRGBArr + (lPixels << 1))[n] = B_BGRA(lColor);
 					n++;
 				}
 			}
@@ -690,11 +795,11 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
 	LPBYTE pPixels = NULL;
 	ULONG lBytesCnt = 0;
 	LPBITMAPINFO pBMI = NULL;
-    ULONG lAB = 0;
+	ULONG lAB = 0;
 	ULONG lColor;
 	LONG i, j, lR, lG, lB, lLevel = abs(lOffset);
 
-    volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {0};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)
@@ -704,53 +809,53 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
 		return FALSE;
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++) {
-        for (i = pRC->left; i < pRC->right; i++) {
-            lColor = GetPixel(pPixels, pBMI, i, j);
+	for (j = pRC->top; j < pRC->bottom; j++) {
+		for (i = pRC->left; i < pRC->right; i++) {
+			lColor = GetPixel(pPixels, pBMI, i, j);
 
-            lR = R_BGR(lColor);
-            lG = G_BGR(lColor);
-            lB = B_BGR(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
-            lAB += (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
-        }
-    }
+			lAB += (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
+		}
+	}
 
-    lAB /= ((pRC->right - pRC->left) * (pRC->bottom - pRC->top));
+	lAB /= ((pRC->right - pRC->left) * (pRC->bottom - pRC->top));
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
-        for (i = pRC->left; i < pRC->right; i++)
-        {
-            lColor = GetPixel(pPixels, pBMI, i, j);
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
+		for (i = pRC->left; i < pRC->right; i++)
+		{
+			lColor = GetPixel(pPixels, pBMI, i, j);
 
-            lR = R_BGR(lColor);
-            lG = G_BGR(lColor);
-            lB = B_BGR(lColor);
+			lR = R_BGRA(lColor);
+			lG = G_BGRA(lColor);
+			lB = B_BGRA(lColor);
 
-            lR = (ULONG)CheckBounds((LONG)(lR + ((lR - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
-                (double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
-            lG = (ULONG)CheckBounds((LONG)(lG + ((lG - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
-                (double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
-            lB = (ULONG)CheckBounds((LONG)(lB + ((lB - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
-                (double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
+			lR = (ULONG)CheckBounds((LONG)(lR + ((lR - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
+				(double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
+			lG = (ULONG)CheckBounds((LONG)(lG + ((lG - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
+				(double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
+			lB = (ULONG)CheckBounds((LONG)(lB + ((lB - /*127.0*/(LONG)lAB) * ((double)((lOffset < 0)?-lLevel:lLevel) /
+				(double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
 
-            SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
-        }
-        if (hWndCallback)
-        {
-            ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-            SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-                (LPARAM)&ONPP);
-        }
-    }
+			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+		}
+		if (hWndCallback)
+		{
+			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
+			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
+				(LPARAM)&ONPP);
+		}
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
 	delete[] pPixels;
 	delete pBMI;
 
-    return TRUE;
+	return TRUE;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -783,14 +888,14 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 		return FALSE;
 	}
 	pPixels2 = new BYTE[lBytesCnt];
-	CopyMemory(pPixels2, pPixels1, lBytesCnt);
+	memcpy(pPixels2, pPixels1, lBytesCnt);
 
 	//RGB[A] -> BGR[A]
 	ReverseBytes((LPBYTE)&crBkColor, 3);
 
 	//Заливаем область для изменения цветом фона
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			SetPixel(pPixels1, pBMI, i, j, crBkColor);
@@ -802,8 +907,8 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 	if ((lY != 0)) sy = ((pRC->right - pRC->left) / abs(lY));
 
 	x1 = 0;
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		if ((lX != 0))
 			if ((j % sx) == 0) x1++;
 		y1 = 0;
@@ -834,7 +939,7 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
@@ -878,7 +983,7 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 		return FALSE;
 	}
 	pPixels2 = new BYTE[lBytesCnt];
-	CopyMemory(pPixels2, pPixels1, lBytesCnt);
+	memcpy(pPixels2, pPixels1, lBytesCnt);
 
 	dblRad = (double)(lAngle * (3.14159265358979 / 180));
 
@@ -887,16 +992,16 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 
 	ReverseBytes((LPBYTE)&crBkColor, 3);
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			SetPixel(pPixels1, pBMI, i, j, crBkColor);
 		}
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			switch (lDirection)
@@ -925,7 +1030,7 @@ BOOL Rotate(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, LONG lAngle, LONG lDi
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 
@@ -968,22 +1073,22 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
 		return FALSE;
 	}
 	pPixels2 = new BYTE[lBytesCnt];
-	CopyMemory(pPixels2, pPixels1, lBytesCnt);
+	memcpy(pPixels2, pPixels1, lBytesCnt);
 
 	dblFunc = (double)((2 * 3.14159265358979) / lFrequency);
 
 	ReverseBytes((LPBYTE)&crBkColor, 3);
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			SetPixel(pPixels1, pBMI, i, j, crBkColor);
 		}
 	}
 
-    for (j = pRC->top; j < pRC->bottom; j++)
-    {
+	for (j = pRC->top; j < pRC->bottom; j++)
+	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
 			switch (lDirection)
@@ -1012,7 +1117,7 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
-    }
+	}
 
 	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
 

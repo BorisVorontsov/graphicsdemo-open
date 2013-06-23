@@ -3,40 +3,12 @@
 //		© BV (Boris Vorontsov, mailto:borisvorontsov@gmail.com) и участники проекта
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define _CRT_SECURE_NO_DEPRECATE
-#define _CRT_NON_CONFORMING_SWPRINTFS
+#include "StdAfx.h"
 
-#include <windows.h>
-#include <commctrl.h>
-#include <process.h>
-#include <stdio.h>
-#include <math.h>
-
-#ifdef UNICODE
-
-#ifndef _UNICODE
-#define _UNICODE
-#endif
-
-#endif
-
-#include <tchar.h>
-
-#include "gddefs.h"
-
-#ifdef __USE_GDIPLUS__
-
-#include <gdiplus.h>
-using namespace Gdiplus;
-
-#pragma comment (lib, "gdiplus.lib")
-
-#endif
-
-#include "graphicsdemo.h"
-#include "graphics.h"
-#include "strparser.h"
-#include "resource.h"
+#include "GraphicsDemo.h"
+#include "Graphics.h"
+#include "StrParser.h"
+#include "Resource.h"
 
 #pragma comment (lib, "comctl32.lib")
 

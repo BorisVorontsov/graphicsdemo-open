@@ -2,11 +2,9 @@
 //		Функции для модуля Graphics (Graphics Helper Functions)
 //////////////////////////////////////////////////////////////////////
 
-#include <windows.h>
-#include <fstream>
+#include "StdAfx.h"
 
-#include "gddefs.h"
-#include "graphicshf.h"
+#include "GraphicsHelperFunctions.h"
 
 //Внутренняя вспомогательная функция
 //Параметры:

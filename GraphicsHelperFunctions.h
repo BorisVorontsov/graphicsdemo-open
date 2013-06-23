@@ -1,5 +1,4 @@
-#ifndef GRAPHICSHF_H
-#define GRAPHICSHF_H
+#pragma once
 
 #define A_BGRA(Color)			((BYTE)((Color) >> 24))
 #define R_BGRA(Color)			((BYTE)((Color) >> 16))
@@ -32,6 +31,4 @@ template <class T>
 #endif
 
 bool LoadOpenCLSources(std::string strFileName, std::string& strSrcCode);
-#endif
-
 #endif

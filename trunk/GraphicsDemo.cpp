@@ -413,6 +413,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 			break;
 		case IDM_FILTERS_GRAYSCALE:
 			GrayScale(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
+			//GrayScale_Fast(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
 			break;
 		case IDM_FILTERS_GAMMACORRECTION:
 			GammaCorrection(hDC, rcPicture.right, rcPicture.bottom, 0.9, &rcCanvas, IPI.hWndProgress);

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 
-#include "RGBBalance.h"
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
 
 //Фильтр "RGB-баланс"
 //Параметры:
@@ -13,52 +14,45 @@
 //	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
 //	hWndCallback	Окно уведомлений о ходе работы (опционально)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
-BOOL RGBBalance(HDC hDC, ULONG lW, ULONG lH, LONG lROffset, LONG lGOffset, LONG lBOffset, LPRECT pRC, HWND hWndCallback)
+
+
+class RGBBalance: public IAlgorithm
 {
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lR, lG, lB;
-	LONG i, j;
+	LONG mROffset;
+	LONG mGOffset;
+	LONG mBOffset;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-
-	for (j = pRC->top; j < pRC->bottom; j++)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
+		ULONG lColor, lR, lG, lB;
+		LONG i, j;
+
+		for (j = pRC->top; j < pRC->bottom; j++)
 		{
-			lColor = GetPixel(pPixels, pBMI, i, j);
+			for (i = pRC->left; i < pRC->right; i++)
+			{
+				lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lR = R_BGRA(lColor);
-			lG = G_BGRA(lColor);
-			lB = B_BGRA(lColor);
+				lR = R_BGRA(lColor);
+				lG = G_BGRA(lColor);
+				lB = B_BGRA(lColor);
 
-			lR = (ULONG)CheckBounds((LONG)(lR += lROffset), (LONG)0, (LONG)255);
-			lG = (ULONG)CheckBounds((LONG)(lG += lGOffset), (LONG)0, (LONG)255);
-			lB = (ULONG)CheckBounds((LONG)(lB += lBOffset), (LONG)0, (LONG)255);
+				lR = (ULONG)CheckBounds((LONG)(lR += mROffset), (LONG)0, (LONG)255);
+				lG = (ULONG)CheckBounds((LONG)(lG += mGOffset), (LONG)0, (LONG)255);
+				lB = (ULONG)CheckBounds((LONG)(lB += mBOffset), (LONG)0, (LONG)255);
 
-			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
-		}
-		if (hWndCallback)
-		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
+				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+			}
+
+			progressEvent(j, pRC->bottom);
 		}
 	}
+public:
+	RGBBalance(LONG aROffset, LONG aGOffset, LONG aBOffset)
+		:mROffset(aROffset), mGOffset(aGOffset), mBOffset(aBOffset)
+	{
+	}
+};
 
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	delete[] pPixels;
-	delete pBMI;
-
-	return TRUE;
-}
+AUTO_REGISTER_ALGORITHM3(L"Filters|RGB Balance", RGBBalance, -12, 4, -6);

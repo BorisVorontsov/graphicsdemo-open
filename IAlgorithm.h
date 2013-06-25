@@ -16,8 +16,6 @@ public:
 	IAlgorithm();
 	virtual ~IAlgorithm();
 
-	bool process(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback);
-
-	
+	virtual bool process(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback);
 };
 

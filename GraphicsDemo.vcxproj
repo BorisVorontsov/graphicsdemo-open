@@ -609,18 +609,14 @@
   <ItemGroup>
     <ClInclude Include="AlgorithmFactory.h" />
     <ClInclude Include="AlphaBlend.h" />
-    <ClInclude Include="Blur_OpenCL.h" />
-    <ClInclude Include="EmptyFilter.h" />
     <ClInclude Include="GDDefs.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="GraphicsDemo.h" />
     <ClInclude Include="GraphicsHelperFunctions.h" />
     <ClInclude Include="IAlgorithm.h" />
-    <ClInclude Include="Shear.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="StrParser.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="Waves.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GD_ICON.ico" />

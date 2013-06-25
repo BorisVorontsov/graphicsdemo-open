@@ -5,16 +5,7 @@
 
 #pragma once
 
-#include "EmptyFilter.h"
-
 //Ёффекты
-#include "Blur_OpenCL.h"
 #include "AlphaBlend.h"
-
-//TODO: ^^ добавл€йте новые эффекты сюда ^^
-
-//“рансформаци€
-#include "Shear.h"
-#include "Waves.h"
 
 //TODO: ^^ добавл€йте новые фильтры трансформации сюда ^^

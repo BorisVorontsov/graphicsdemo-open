@@ -1,57 +1,45 @@
 #include "StdAfx.h"
 
-#include "EmptyFilter.h"
-
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
 //Шаблон для новых фильтров
-BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., */LPRECT pRC, HWND hWndCallback)
+
+
+class EmptyFilter: public IAlgorithm
 {
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lA, lR, lG, lB;
-	LONG i, j;
-
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-
-	//-----------------------------------------------------------------------------------------------
-	//Тело фильтра
-	for (j = pRC->top; j < pRC->bottom; j++)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
+		ULONG lColor, lA, lR, lG, lB;
+		LONG i, j;
+
+		//Тело фильтра
+		for (j = pRC->top; j < pRC->bottom; j++)
 		{
-			lColor = GetPixel(pPixels, pBMI, i, j);
+			for (i = pRC->left; i < pRC->right; i++)
+			{
+				lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lA = A_BGRA(lColor);
-			lR = R_BGRA(lColor);
-			lG = G_BGRA(lColor);
-			lB = B_BGRA(lColor);
+				lA = A_BGRA(lColor);
+				lR = R_BGRA(lColor);
+				lG = G_BGRA(lColor);
+				lB = B_BGRA(lColor);
 
-			//...
+				//...
 
-			SetPixel(pPixels, pBMI, i, j, BGRA(lB, lG, lR, lA));
+				SetPixel(pPixels, pBMI, i, j, BGRA(lB, lG, lR, lA));
+			}
+			//Отображение статуса выполнения (опциональный блок)
+			progressEvent(j, pRC->bottom);
 		}
-		//Отображение статуса выполнения (опциональный блок)
-		if (hWndCallback)
-		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
-		}
+		//-----------------------------------------------------------------------------------------------
 	}
-	//-----------------------------------------------------------------------------------------------
+public:
+	EmptyFilter(/*...дополнительные параметры..., */)
+	{
+	}
+};
 
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	delete[] pPixels;
-	delete pBMI;
-
-	return TRUE;
-}
+//AUTO_REGISTER_ALGORITHM( L"menu|path",  EmptyFilter );
+//AUTO_REGISTER_ALGORITHM1( L"menu|path",  EmptyFilter, arg1 );
+//AUTO_REGISTER_ALGORITHM2( L"menu|path",  EmptyFilter, arg1, arg2 );

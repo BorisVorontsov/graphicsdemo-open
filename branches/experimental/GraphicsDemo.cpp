@@ -416,11 +416,6 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 	{
 		switch (IPI.dwFltIndex)
 		{
-	#ifdef __USE_OPENCL__
-			case IDM_FILTERS_BLUR_OCL:
-				Blur_OCL(hDC, rcPicture.right, rcPicture.bottom, 16);
-				break;
-	#endif
 	#ifdef __USE_GDIPLUS__
 			case IDM_FILTERS_ALPHABLEND:
 			{
@@ -455,19 +450,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 				break;
 			}
 	#endif
-			case IDM_TRANSFORMATION_SHEAR:
-				Shear(hDC, rcPicture.right, rcPicture.bottom, -48, 0, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
-				break;
-//			case IDM_TRANSFORMATION_ROTATE:
-//				Rotate(hDC, rcPicture.right, rcPicture.bottom, rcCanvas.right / 2 - 4, rcCanvas.bottom / 2 - 4,
-//					34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
-//				break;
-			case IDM_TRANSFORMATION_WAVES:
-				Waves(hDC, rcPicture.right, rcPicture.bottom, 6, 48, WAVES_DIRECTION_WE, RGB(255, 255, 255),
-					&rcCanvas, IPI.hWndProgress);
-				break;
 			default:
-				//
 				break;
 		}
 	}

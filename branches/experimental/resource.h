@@ -36,6 +36,7 @@
 #define IDM_FILTERS_BLUR_OCL            40020
 #define ID_FILTERS_ALPHABLEND           40021
 #define IDM_FILTERS_ALPHABLEND          40022
+#define ID_TRANSFORMATION               40023
 
 // Next default values for new objects
 // 
@@ -43,7 +44,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        109
-#define _APS_NEXT_COMMAND_VALUE         40023
+#define _APS_NEXT_COMMAND_VALUE         40024
 #define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

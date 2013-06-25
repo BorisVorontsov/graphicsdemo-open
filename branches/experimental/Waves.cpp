@@ -1,6 +1,11 @@
 #include "StdAfx.h"
 
-#include "Waves.h"
+
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
+
+#define WAVES_DIRECTION_NS		0
+#define WAVES_DIRECTION_WE		1
 
 //Волны
 //Формула:
@@ -17,75 +22,80 @@
 //	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
 //	hWndCallback	Окно уведомлений о ходе работы (опционально)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
-BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG lDirection, COLORREF crBkColor, LPRECT pRC, HWND hWndCallback)
+
+
+class Waves: public IAlgorithm
 {
-	LPBYTE pPixels1 = NULL, pPixels2 = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	LONG i, j, x, y;
-	double dblFunc;
+	LONG mlAmplitude;
+	LONG mlFrequency;
+	LONG mlDirection;
+	COLORREF mcrBkColor;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
-		if (pPixels1)
-			delete[] pPixels1;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-	pPixels2 = new BYTE[lBytesCnt];
-	memcpy(pPixels2, pPixels1, lBytesCnt);
-
-	dblFunc = (double)((2 * 3.14159265358979) / lFrequency);
-
-	ReverseBytes((LPBYTE)&crBkColor, 3);
-
-	for (j = pRC->top; j < pRC->bottom; j++)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
-		{
-			SetPixel(pPixels1, pBMI, i, j, crBkColor);
-		}
-	}
+		LONG i, j, x, y;
+		LPBYTE pPixels2 = NULL;
+		double dblFunc;
 
-	for (j = pRC->top; j < pRC->bottom; j++)
-	{
-		for (i = pRC->left; i < pRC->right; i++)
+		pPixels2 = new BYTE[lBytesCnt];
+		memcpy(pPixels2, pPixels, lBytesCnt);
+
+		dblFunc = (double)((2 * 3.14159265358979) / mlFrequency);
+
+		ReverseBytes((LPBYTE)&mcrBkColor, 3);
+
+		for (j = pRC->top; j < pRC->bottom; j++)
 		{
-			switch (lDirection)
+			for (i = pRC->left; i < pRC->right; i++)
 			{
-				case WAVES_DIRECTION_NS:
-					x = (LONG)(sin(j * dblFunc) * lAmplitude) + i;
-					y = j;
-					break;
-				case WAVES_DIRECTION_WE:
-					x = i;
-					y = (LONG)(sin(i * dblFunc) * lAmplitude) + j;
-					break;
-				default:
-					//
-					break;
+				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
+			}
+		}
+
+		for (j = pRC->top; j < pRC->bottom; j++)
+		{
+			for (i = pRC->left; i < pRC->right; i++)
+			{
+				switch (mlDirection)
+				{
+					case WAVES_DIRECTION_NS:
+						x = (LONG)(sin(j * dblFunc) * mlAmplitude) + i;
+						y = j;
+						break;
+					case WAVES_DIRECTION_WE:
+						x = i;
+						y = (LONG)(sin(i * dblFunc) * mlAmplitude) + j;
+						break;
+					default:
+						//
+						break;
+				}
+
+				if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
+				if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
+
+				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 			}
 
-			if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
-			if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
-
-			SetPixel(pPixels1, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
-		}
-		if (hWndCallback)
-		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
+			progressEvent(j, pRC->bottom);
 		}
 	}
+public:
+	Waves(LONG lAmplitude, LONG lFrequency, LONG lDirection, COLORREF crBkColor)
+		:mlAmplitude(lAmplitude), 
+		mlFrequency(lFrequency), 
+		mlDirection(lDirection),
+		mcrBkColor(crBkColor)
+	{
+	}
+};
 
-	SetImagePixels(hDC, lW, lH, pPixels1, pBMI);
+//6, 48, WAVES_DIRECTION_WE, RGB(255, 255, 255)
 
-	delete[] pPixels1;
-	delete[] pPixels2;
-	delete pBMI;
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
 
-	return TRUE;
-}
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_WE, RGB(255, 255, 255) );

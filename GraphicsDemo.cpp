@@ -10,6 +10,10 @@
 #include "StrParser.h"
 #include "Resource.h"
 
+#include "AlgorithmFactory.h"
+
+#include <assert.h>
+
 #pragma comment (lib, "comctl32.lib")
 
 #pragma comment (linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' " \
@@ -38,6 +42,8 @@ static volatile HANDLE hImgProcThread;
 static UINT uImgProcThreadID;
 
 static volatile IMGPROCINFO IPI = {0};
+
+void FillMenu(HWND hWnd);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 					   HINSTANCE hPrevInstance,
@@ -107,6 +113,8 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 		case WM_INITDIALOG:
+			FillMenu(hWnd);
+
 			SendMessage(hWnd, WM_SETTEXT, 0, (LPARAM)APP_NAME);
 
 			pOldCanvasProc = SetWindowLongPtr(GetDlgItem(hWnd, IDC_STCCANVAS), GWLP_WNDPROC, (LONG_PTR)CanvasProc);
@@ -359,8 +367,9 @@ INT_PTR CALLBACK ProgressWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			{
 				case EVENT_ON_PROGRESS:
 				{
-					LPONPROGRESSPARAMS pONPP = (LPONPROGRESSPARAMS)lParam;
-					SendDlgItemMessage(hWnd, IDC_PGBEP, PBM_SETPOS, pONPP->dwPercents, 0);
+					//LPONPROGRESSPARAMS pONPP = (LPONPROGRESSPARAMS)lParam;
+					int tPercent = (int)lParam;
+					SendDlgItemMessage(hWnd, IDC_PGBEP, PBM_SETPOS, tPercent, 0);
 					break;
 				}
 				default:
@@ -398,85 +407,71 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 	QueryPerformanceCounter(&intStart);
 #endif
 
-	switch (IPI.dwFltIndex)
+	std::auto_ptr<IAlgorithm> tPtr = AlgorithmFactory::getInstance().create(IPI.dwFltIndex);
+	if( tPtr.get() )
 	{
-		case IDM_FILTERS_BLUR:
-			Blur(hDC, rcPicture.right, rcPicture.bottom, 16, &rcCanvas, IPI.hWndProgress);
-			break;
-#ifdef __USE_OPENCL__
-		case IDM_FILTERS_BLUR_OCL:
-			Blur_OCL(hDC, rcPicture.right, rcPicture.bottom, 16);
-			break;
-#endif
-		case IDM_FILTERS_RGBBALANCE:
-			RGBBalance(hDC, rcPicture.right, rcPicture.bottom, -12, 4, -6, &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_FILTERS_GRAYSCALE:
-			GrayScale(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
-			//GrayScale_Fast(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_FILTERS_GAMMACORRECTION:
-			GammaCorrection(hDC, rcPicture.right, rcPicture.bottom, 0.9, &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_FILTERS_EDGEDETECTION:
-			EdgeDetection(hDC, rcPicture.right, rcPicture.bottom, RGB(255, 255, 255), &rcCanvas,
-				IPI.hWndProgress);
-			break;
-		case IDM_FILTERS_MEDIAN:
-			Median(hDC, rcPicture.right, rcPicture.bottom, 8, &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_FILTERS_CONTRAST:
-			Contrast(hDC, rcPicture.right, rcPicture.bottom, 32, &rcCanvas, IPI.hWndProgress);
-			break;
-#ifdef __USE_GDIPLUS__
-		case IDM_FILTERS_ALPHABLEND:
-		{
-			Graphics *pGraphics = NULL;
-			Image *pImage = new Image(lpPic2Path);
-			LONG lW = 0, lH = 0;
-			HDC hTmpDC;
-			HBITMAP hTmpBmp, hOldBmp;
-	
-			if (pImage->GetLastStatus() == Ok)
-			{
-				lW = pImage->GetWidth();
-				lH = pImage->GetHeight();
-
-				hTmpDC = CreateCompatibleDC(hDC);
-				hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
-				hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
-				pGraphics = new Graphics(hTmpDC);
-				pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
-
-				RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
-					(rcCanvas.bottom + (lH * 2)) >> 1};
-				AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
-
-				DeleteObject(SelectObject(hTmpDC, hOldBmp));
-				DeleteDC(hTmpDC);
-
-				delete pGraphics;
-			}
-			delete pImage;
-
-			break;
-		}
-#endif
-		case IDM_TRANSFORMATION_SHEAR:
-			Shear(hDC, rcPicture.right, rcPicture.bottom, -48, 0, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_TRANSFORMATION_ROTATE:
-			Rotate(hDC, rcPicture.right, rcPicture.bottom, rcCanvas.right / 2 - 4, rcCanvas.bottom / 2 - 4,
-				34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
-			break;
-		case IDM_TRANSFORMATION_WAVES:
-			Waves(hDC, rcPicture.right, rcPicture.bottom, 6, 48, WAVES_DIRECTION_WE, RGB(255, 255, 255),
-				&rcCanvas, IPI.hWndProgress);
-			break;
-		default:
-			//
-			break;
+		tPtr->process(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
 	}
+	else
+	{
+		switch (IPI.dwFltIndex)
+		{
+	#ifdef __USE_OPENCL__
+			case IDM_FILTERS_BLUR_OCL:
+				Blur_OCL(hDC, rcPicture.right, rcPicture.bottom, 16);
+				break;
+	#endif
+	#ifdef __USE_GDIPLUS__
+			case IDM_FILTERS_ALPHABLEND:
+			{
+				Graphics *pGraphics = NULL;
+				Image *pImage = new Image(lpPic2Path);
+				LONG lW = 0, lH = 0;
+				HDC hTmpDC;
+				HBITMAP hTmpBmp, hOldBmp;
+	
+				if (pImage->GetLastStatus() == Ok)
+				{
+					lW = pImage->GetWidth();
+					lH = pImage->GetHeight();
+
+					hTmpDC = CreateCompatibleDC(hDC);
+					hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
+					hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
+					pGraphics = new Graphics(hTmpDC);
+					pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
+
+					RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
+						(rcCanvas.bottom + (lH * 2)) >> 1};
+					AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
+
+					DeleteObject(SelectObject(hTmpDC, hOldBmp));
+					DeleteDC(hTmpDC);
+
+					delete pGraphics;
+				}
+				delete pImage;
+
+				break;
+			}
+	#endif
+			case IDM_TRANSFORMATION_SHEAR:
+				Shear(hDC, rcPicture.right, rcPicture.bottom, -48, 0, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
+				break;
+//			case IDM_TRANSFORMATION_ROTATE:
+//				Rotate(hDC, rcPicture.right, rcPicture.bottom, rcCanvas.right / 2 - 4, rcCanvas.bottom / 2 - 4,
+//					34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), &rcCanvas, IPI.hWndProgress);
+//				break;
+			case IDM_TRANSFORMATION_WAVES:
+				Waves(hDC, rcPicture.right, rcPicture.bottom, 6, 48, WAVES_DIRECTION_WE, RGB(255, 255, 255),
+					&rcCanvas, IPI.hWndProgress);
+				break;
+			default:
+				//
+				break;
+		}
+	}
+	
 
 #ifdef __TESTING_MODE__
 	QueryPerformanceCounter(&intEnd);
@@ -857,4 +852,109 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 		return _tcslen(lpFileName);
 	}
 	else return 0;
+}
+
+
+// Construct menu
+std::wstring CorrectMenuName(const std::wstring &aSrc)
+{
+	std::wstring tResult;
+
+	if( aSrc.empty() )
+		return tResult;
+
+	tResult.reserve(aSrc.size());
+
+	bool tPrevAmp = false;
+	for( size_t i = 0; i < aSrc.size() - 1; ++i )
+	{
+		wchar_t tChar = aSrc[i];
+		if( tChar == L'&' && !tPrevAmp )
+		{
+
+			tPrevAmp = true;
+		}
+		else
+		{
+			tPrevAmp = false;
+
+			tResult.push_back(tChar);
+		}
+	}
+
+	return tResult;
+}
+
+int FindSubmenu(HMENU aSrc, const std::wstring &aName)
+{
+	const int tCount = GetMenuItemCount(aSrc);
+	for( int i = 0 ; i < tCount; ++i )
+	{
+		const int tLen = GetMenuString(aSrc, i, 0, 0, MF_BYPOSITION);
+		std::vector<wchar_t> tNameVec(tLen + 1);
+		GetMenuString(aSrc, i, &tNameVec[0], tLen + 1, MF_BYPOSITION);
+
+		std::wstring tNameStr(tNameVec.begin(), tNameVec.end());
+
+		if( CorrectMenuName(tNameStr) == aName )
+			return i;
+	}
+
+	return -1;
+}
+
+
+HMENU CreateMenuSequence(HMENU aMenuRoot, const AlgorithmFactory::MenuSequence &aSequence)
+{
+	HMENU tMenu = aMenuRoot;
+	for( size_t i = 0; i < aSequence.path.size(); ++i )
+	{
+		const std::wstring &tMenuName = aSequence.path[i];
+		const bool tIsSubmenu = (i != (aSequence.path.size() - 1));
+
+		int tSubMenu = FindSubmenu( tMenu, tMenuName );
+
+		if( -1 == tSubMenu )
+		{
+			// create!
+			const int tIndex = tIsSubmenu?0:aSequence.index;
+			AppendMenu(tMenu, MF_STRING, tIndex, tMenuName.c_str());
+			tSubMenu = FindSubmenu( tMenu, tMenuName );
+		}
+
+		assert( -1 != tSubMenu);
+
+		//else
+		//{
+			// found!
+		MENUITEMINFO tInfo = {0};
+		tInfo.cbSize = sizeof(MENUITEMINFO);
+		tInfo.fMask |= MIIM_SUBMENU;
+		BOOL tRes = GetMenuItemInfo(tMenu, tSubMenu, TRUE, &tInfo);
+
+		if( tIsSubmenu && !tInfo.hSubMenu )
+		{
+			tInfo.hSubMenu = CreateMenu();
+			tRes = SetMenuItemInfo(tMenu, tSubMenu, TRUE, &tInfo);
+		}
+
+		if( tIsSubmenu )
+			tMenu = tInfo.hSubMenu;
+	}
+
+	return tMenu;
+}
+
+
+void FillMenu(HWND hWnd)
+{
+	typedef AlgorithmFactory::MenuList MenuList;
+	const MenuList tMenuList = AlgorithmFactory::getInstance().getMenuList();
+
+	const HMENU tMenuRoot = GetMenu(hWnd);
+
+	for( MenuList::const_iterator it = tMenuList.begin(), itEnd = tMenuList.end(); it != itEnd; ++it)
+	{
+		CreateMenuSequence(tMenuRoot, *it);
+	}
 }

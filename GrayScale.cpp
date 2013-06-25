@@ -1,8 +1,10 @@
 #include "StdAfx.h"
 
-#include "GrayScale.h"
 
-//Фильтр "Серые тона"
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
+
+//Алгоритм
 //Параметры:
 //	hDC				DC назначения
 //	lW				Ширина DC
@@ -10,56 +12,46 @@
 //	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
 //	hWndCallback	Окно уведомлений о ходе работы (опционально)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
-BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
+class GrayScale: public IAlgorithm
 {
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lR, lG, lB, lS;
-	LONG i, j;
-
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-
-	for (j = pRC->top; j < pRC->bottom; j++)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
+		ULONG lColor, lR, lG, lB, lS;
+		LONG i, j;
+
+		for (j = pRC->top; j < pRC->bottom; j++)
 		{
-			lColor = GetPixel(pPixels, pBMI, i, j);
+			for (i = pRC->left; i < pRC->right; i++)
+			{
+				lColor = GetPixel(pPixels, pBMI, i, j);
 
-			//BGR -> RGB
-			lR = R_BGRA(lColor);
-			lG = G_BGRA(lColor);
-			lB = B_BGRA(lColor);
+				//BGR -> RGB
+				lR = R_BGRA(lColor);
+				lG = G_BGRA(lColor);
+				lB = B_BGRA(lColor);
 
-			lS = (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
+				lS = (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
 
-			//SSS -> BGR
-			SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
-		}
-		if (hWndCallback)
-		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
+				//SSS -> BGR
+				SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
+			}
+
+			progressEvent(j, pRC->bottom);
 		}
 	}
+public:
 
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
+};
 
-	delete[] pPixels;
-	delete pBMI;
 
-	return TRUE;
-}
-
+//Алгоритм
+//Параметры:
+//	hDC				DC назначения
+//	lW				Ширина DC
+//	lH				Высота DC
+//	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
+//	hWndCallback	Окно уведомлений о ходе работы (опционально)
+//Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 //Оптимизированный фильтр "Серые тона" (hsilgos)
 
 //Таблица предвычисленных значений серого для компонент 
@@ -93,60 +85,37 @@ struct CalculatedCoeffs
 	}
 };
 
-//Алгоритм
-//Параметры:
-//	hDC				DC назначения
-//	lW				Ширина DC
-//	lH				Высота DC
-//	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
-//	hWndCallback	Окно уведомлений о ходе работы (опционально)
-//Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
-BOOL GrayScale_Fast(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
+class GrayScaleFast: public IAlgorithm
 {
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	BYTE r, g, b, s;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-
-	static const CalculatedCoeffs precalc;
-
-	ULONG lStep = pBMI->bmiHeader.biBitCount / 8;
-	for (ULONG i = 0; i < lBytesCnt; i+= lStep)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
+		BYTE r, g, b, s;
 
-		r = pPixels[i];
-		g = pPixels[i + 1];
-		b = pPixels[i + 2];
+		static const CalculatedCoeffs precalc;
 
-		s = precalc.get(r, g, b);
-
-		pPixels[i] = s;
-		pPixels[i + 1] = s;
-		pPixels[i + 2] = s;
-
-		if (hWndCallback)
+		ULONG lStep = pBMI->bmiHeader.biBitCount / 8;
+		for (ULONG i = 0; i < lBytesCnt; i+= lStep)
 		{
-			ONPP.dwPercents = (DWORD)(((double)i / (double)lBytesCnt) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
+
+			r = pPixels[i];
+			g = pPixels[i + 1];
+			b = pPixels[i + 2];
+
+			s = precalc.get(r, g, b);
+
+			pPixels[i] = s;
+			pPixels[i + 1] = s;
+			pPixels[i + 2] = s;
+
+			//progressEvent(i, lBytesCnt);
 		}
-
 	}
+public:
 
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
+};
 
-	delete[] pPixels;
-	delete pBMI;
 
-	return TRUE;
-}
+AUTO_REGISTER_ALGORITHM( L"Filters|GrayScale|Slow",  GrayScale );
+AUTO_REGISTER_ALGORITHM( L"Filters|GrayScale|Fast",  GrayScaleFast );
+

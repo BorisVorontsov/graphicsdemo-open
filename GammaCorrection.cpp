@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 
-#include "GammaCorrection.h"
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
 
 //Фильтр "Гамма-коррекция"
 //Параметры:
@@ -11,55 +12,48 @@
 //	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
 //	hWndCallback	Окно уведомлений о ходе работы (опционально)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
-BOOL GammaCorrection(HDC hDC, ULONG lW, ULONG lH, double dblGamma, LPRECT pRC, HWND hWndCallback)
+
+class GammaCorrection: public IAlgorithm
 {
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lR, lG, lB;
-	LONG i, j;
+	double mdblGamma;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
-
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
-		return FALSE;
-	}
-
-	for (j = pRC->top; j < pRC->bottom; j++)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
+		ULONG lColor, lR, lG, lB;
+		LONG i, j;
+
+		for (j = pRC->top; j < pRC->bottom; j++)
 		{
-			lColor = GetPixel(pPixels, pBMI, i, j);
+			for (i = pRC->left; i < pRC->right; i++)
+			{
+				lColor = GetPixel(pPixels, pBMI, i, j);
 
-			lR = R_BGRA(lColor);
-			lG = G_BGRA(lColor);
-			lB = B_BGRA(lColor);
+				lR = R_BGRA(lColor);
+				lG = G_BGRA(lColor);
+				lB = B_BGRA(lColor);
 
-			lR = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lR / 255.0, 1.0 / dblGamma))
-				+ 0.5), (LONG)0, (LONG)255);
-			lG = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lG / 255.0, 1.0 / dblGamma))
-				+ 0.5), (LONG)0, (LONG)255);
-			lB = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lB / 255.0, 1.0 / dblGamma))
-				+ 0.5), (LONG)0, (LONG)255);
+				lR = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lR / 255.0, 1.0 / mdblGamma))
+					+ 0.5), (LONG)0, (LONG)255);
+				lG = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lG / 255.0, 1.0 / mdblGamma))
+					+ 0.5), (LONG)0, (LONG)255);
+				lB = (ULONG)CheckBounds((LONG)((255.0 * pow((double)lB / 255.0, 1.0 / mdblGamma))
+					+ 0.5), (LONG)0, (LONG)255);
 
-			SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
-		}
-		if (hWndCallback)
-		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
-			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
-				(LPARAM)&ONPP);
+				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+			}
+			progressEvent(j, pRC->bottom);
 		}
 	}
+public:
+	GammaCorrection(double dblGamma)
+		:mdblGamma(dblGamma)
+	{
+	}
+};
 
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
 
-	delete[] pPixels;
-	delete pBMI;
-
-	return TRUE;
-}
+AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|0.1",  GammaCorrection, 0.1 );
+AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|0.5",  GammaCorrection, 0.5 );
+AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.0",  GammaCorrection, 1.0 );
+AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.5",  GammaCorrection, 1.5 );
+AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.9",  GammaCorrection, 1.9 );

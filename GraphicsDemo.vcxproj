@@ -567,6 +567,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AlgorithmFactory.cpp" />
     <ClCompile Include="AlphaBlend.cpp" />
     <ClCompile Include="Blur.cpp" />
     <ClCompile Include="Blur_OpenCL.cpp" />
@@ -586,6 +587,7 @@
     </ClCompile>
     <ClCompile Include="GraphicsHelperFunctions.cpp" />
     <ClCompile Include="GrayScale.cpp" />
+    <ClCompile Include="IAlgorithm.cpp" />
     <ClCompile Include="Median.cpp" />
     <ClCompile Include="RGBBalance.cpp" />
     <ClCompile Include="Rotate.cpp" />
@@ -605,21 +607,15 @@
     <ClCompile Include="Waves.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmFactory.h" />
     <ClInclude Include="AlphaBlend.h" />
-    <ClInclude Include="Blur.h" />
     <ClInclude Include="Blur_OpenCL.h" />
-    <ClInclude Include="Contrast.h" />
-    <ClInclude Include="EdgeDetection.h" />
     <ClInclude Include="EmptyFilter.h" />
-    <ClInclude Include="GammaCorrection.h" />
     <ClInclude Include="GDDefs.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="GraphicsDemo.h" />
     <ClInclude Include="GraphicsHelperFunctions.h" />
-    <ClInclude Include="GrayScale.h" />
-    <ClInclude Include="Median.h" />
-    <ClInclude Include="RGBBalance.h" />
-    <ClInclude Include="Rotate.h" />
+    <ClInclude Include="IAlgorithm.h" />
     <ClInclude Include="Shear.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="StrParser.h" />

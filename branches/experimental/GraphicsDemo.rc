@@ -1,0 +1,238 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_NEUTRAL
+#pragma code_page(1251)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ODSTDFILTER         "BMP files (*.bmp)|*.bmp|All files (*.*)|*.*|"
+    IDS_ODGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|WMF files (*.wmf)|*.wmf|EMF files (*.emf)|*.emf|All files (*.*)|*.*|"
+    IDS_SDSTDFILTER         "BMP files (*.bmp)|*.bmp|"
+    IDS_SDGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ABOUTSTRING1        "Открытый проект ""%s""\n"
+    IDS_ABOUTSTRING2        "Авторские права © BV и участники проекта, 2007 - 2010, для Sources.ru"
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian (Russia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian (Russia) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAINWND DIALOGEX 0, 0, 697, 484
+STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CLIENTEDGE | WS_EX_CONTROLPARENT
+CAPTION "#"
+MENU IDR_MAINMENU
+CLASS "GraphicsDemo_WndClass"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "",IDC_STCCANVAS,6,6,258,258
+END
+
+IDD_PROGRESS DIALOGEX 0, 0, 205, 25
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Progress1",IDC_PGBEP,"msctls_progress32",WS_BORDER,5,9,195,7
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_MAINWND, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 690
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 477
+    END
+
+    IDD_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 198
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 18
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,1,0,42
+ PRODUCTVERSION 1,1,0,42
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Boris Vorontsov"
+            VALUE "FileDescription", "Graphics Demo"
+            VALUE "FileVersion", "1, 1, 0, 42"
+            VALUE "LegalCopyright", "Copyright © 2007 - 2010 Boris Vorontsov"
+            VALUE "OriginalFilename", "GraphicsDemo.exe"
+            VALUE "ProductVersion", "1, 1, 0, 42"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINMENU MENUEX
+BEGIN
+    POPUP "&File",                          65535,MFT_STRING,MFS_ENABLED
+    BEGIN
+        MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS,MFT_STRING,MFS_ENABLED
+    END
+    POPUP "F&ilters",                       65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    BEGIN
+        MENUITEM "&Blur",                       IDM_FILTERS_BLUR,MFT_STRING,MFS_ENABLED
+        MENUITEM "B&lur (OpenCL)",              IDM_FILTERS_BLUR_OCL,MFT_STRING,MFS_GRAYED
+        MENUITEM "&RGB Balance",                IDM_FILTERS_RGBBALANCE,MFT_STRING,MFS_ENABLED
+        MENUITEM "&GrayScale",                  IDM_FILTERS_GRAYSCALE,MFT_STRING,MFS_ENABLED
+        MENUITEM "G&amma Correction",           IDM_FILTERS_GAMMACORRECTION,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Edge Detection",             IDM_FILTERS_EDGEDETECTION,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Median",                     IDM_FILTERS_MEDIAN,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Contrast",                   IDM_FILTERS_CONTRAST,MFT_STRING,MFS_ENABLED
+        MENUITEM MFT_SEPARATOR
+        MENUITEM "&Alpha Blend",                IDM_FILTERS_ALPHABLEND,MFT_STRING,MFS_GRAYED
+    END
+    POPUP "&Transformation",                65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    BEGIN
+        MENUITEM "&Shear",                      IDM_TRANSFORMATION_SHEAR,MFT_STRING,MFS_ENABLED
+        MENUITEM "R&otate",                     IDM_TRANSFORMATION_ROTATE,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Waves",                      IDM_TRANSFORMATION_WAVES,MFT_STRING,MFS_ENABLED
+    END
+    MENUITEM "&Clear",                      IDM_CLEAR,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    POPUP "&Help",                          65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    BEGIN
+        MENUITEM "&About",                      IDM_HELP_ABOUT,MFT_STRING,MFS_ENABLED
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "GD_ICON.ico"
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

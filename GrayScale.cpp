@@ -61,6 +61,39 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 }
 
 //Оптимизированный фильтр "Серые тона" (hsilgos)
+
+//Таблица предвычисленных значений серого для компонент 
+struct CalculatedCoeffs
+{
+	enum 
+	{
+		ColorCount	= 256,
+		red_coeff   = 6968,
+		green_coeff = 23434,
+		blue_coeff	= 32768 - red_coeff - green_coeff
+	};
+
+	int r[ColorCount];
+	int g[ColorCount];
+	int b[ColorCount];
+
+	CalculatedCoeffs()
+	{
+		for( int i = 0 ; i < ColorCount; ++i )
+		{
+			r[i] = i * red_coeff;
+			g[i] = i * green_coeff;
+			b[i] = i * blue_coeff;
+		}
+	}
+
+	unsigned char get(unsigned char ar, unsigned char ag, unsigned char ab) const
+	{
+		return (unsigned char)((r[ar] + g[ag] + b[ab]) >> 15);
+	}
+};
+
+//Алгоритм
 //Параметры:
 //	hDC				DC назначения
 //	lW				Ширина DC
@@ -73,8 +106,7 @@ BOOL GrayScale_Fast(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 	LPBYTE pPixels = NULL;
 	ULONG lBytesCnt = 0;
 	LPBITMAPINFO pBMI = NULL;
-	ULONG lColor, lR, lG, lB, lS;
-	LONG i, j;
+	BYTE r, g, b, s;
 
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
@@ -88,28 +120,27 @@ BOOL GrayScale_Fast(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 
 	static const CalculatedCoeffs precalc;
 
-	for (j = pRC->top; j < pRC->bottom; j++)
+	ULONG lStep = pBMI->bmiHeader.biBitCount / 8;
+	for (ULONG i = 0; i < lBytesCnt; i+= lStep)
 	{
-		for (i = pRC->left; i < pRC->right; i++)
-		{
-			lColor = GetPixel(pPixels, pBMI, i, j);
 
-			//BGR -> RGB
-			lR = R_BGRA(lColor);
-			lG = G_BGRA(lColor);
-			lB = B_BGRA(lColor);
+		r = pPixels[i];
+		g = pPixels[i + 1];
+		b = pPixels[i + 2];
 
-			lS = precalc.get(lR, lG, lB);
+		s = precalc.get(r, g, b);
 
-			//SSS -> BGR
-			SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
-		}
+		pPixels[i] = s;
+		pPixels[i + 1] = s;
+		pPixels[i + 2] = s;
+
 		if (hWndCallback)
 		{
-			ONPP.dwPercents = (DWORD)(((double)j / (double)pRC->bottom) * 100);
+			ONPP.dwPercents = (DWORD)(((double)i / (double)lBytesCnt) * 100);
 			SendMessage(hWndCallback, WM_GRAPHICSEVENT, MAKEWPARAM(EVENT_ON_PROGRESS, 0),
 				(LPARAM)&ONPP);
 		}
+
 	}
 
 	SetImagePixels(hDC, lW, lH, pPixels, pBMI);

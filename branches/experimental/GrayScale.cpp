@@ -14,14 +14,14 @@
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 class GrayScale: public IAlgorithm
 {
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		ULONG lColor, lR, lG, lB, lS;
 		LONG i, j;
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				lColor = GetPixel(pPixels, pBMI, i, j);
 
@@ -36,7 +36,7 @@ class GrayScale: public IAlgorithm
 				SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 public:
@@ -88,7 +88,7 @@ struct CalculatedCoeffs
 class GrayScaleFast: public IAlgorithm
 {
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		BYTE r, g, b, s;
 
@@ -108,7 +108,7 @@ class GrayScaleFast: public IAlgorithm
 			pPixels[i + 1] = s;
 			pPixels[i + 2] = s;
 
-			//progressEvent(i, lBytesCnt);
+			progressEvent(i, lBytesCnt);
 		}
 	}
 public:

@@ -2,6 +2,9 @@
 
 #include "AlphaBlend.h"
 
+#include "IAlgorithm.h"
+#include "AlgorithmFactory.h"
+
 //Фильтр "Наложение по альфе"
 //Параметры:
 //	hDstDC			DC назначения
@@ -15,6 +18,7 @@
 //	pRC				Указатель на структуру RECT, определяющую область изображения для изменения
 //	hWndCallback	Окно уведомлений о ходе работы (опционально)
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
+
 BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, ULONG lSrcH, BYTE bAlpha, ALPHAMODE AlphaMode, LPRECT pRC, HWND hWndCallback)
 {
 	LPBYTE pSrcPixels = NULL, pDstPixels = NULL;
@@ -118,3 +122,49 @@ AB_Exit:
 
 	return bResult;
 }
+
+//#ifdef __USE_GDIPLUS__
+#if 0
+
+class AlphaBlendWrapp: public IAlgorithm
+{
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC){}
+
+	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND hWndCallback)
+	{
+		Graphics *pGraphics = NULL;
+		Image *pImage = new Image(lpPic2Path);
+		HDC hTmpDC;
+		HBITMAP hTmpBmp, hOldBmp;
+		ULONG lW;
+		ULONG lH;
+	
+		if (pImage->GetLastStatus() == Ok)
+		{
+			lW = pImage->GetWidth();
+			lH = pImage->GetHeight();
+
+			hTmpDC = CreateCompatibleDC(hDC);
+			hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
+			hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
+			pGraphics = new Graphics(hTmpDC);
+			pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
+
+			RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
+				(rcCanvas.bottom + (lH * 2)) >> 1};
+			AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, hWndCallback);
+
+			DeleteObject(SelectObject(hTmpDC, hOldBmp));
+			DeleteDC(hTmpDC);
+
+			delete pGraphics;
+		}
+		delete pImage;
+	}
+};
+
+AUTO_REGISTER_ALGORITHM( L"Filters|Alpha Blend",  AlphaBlendWrapp);
+
+#endif
+
+

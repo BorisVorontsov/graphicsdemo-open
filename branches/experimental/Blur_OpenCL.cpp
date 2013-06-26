@@ -19,11 +19,13 @@ class Blur_OCL
 
 	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC){}
 
-	virtual bool process(HDC hDC, ULONG lW, ULONG lH, LPRECT /*pRC*/, HWND /*hWndCallback*/)
+	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND /*hWndCallback*/)
 	{
 		LPBYTE pPixels = NULL;
 		ULONG lBytesCnt = 0;
 		LPBITMAPINFO pBMI = NULL;
+		ULONG lW = rcPicture.right;
+		ULONG lH = rcPicture.bottom;
 
 		cl_int intErr;
 	

@@ -23,7 +23,7 @@ class Shear: public IAlgorithm
 	LONG mlY; 
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LPBYTE pPixels2 = NULL;
 		LONG i, j, x, x1, y, y1, sx, sy;
@@ -35,25 +35,25 @@ class Shear: public IAlgorithm
 		ReverseBytes((LPBYTE)&mcrBkColor, 3);
 
 		//Заливаем область для изменения цветом фона
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
 			}
 		}
 
 		//Вычисляем шаги для x и y
-		if ((mlX != 0)) sx = ((pRC->bottom - pRC->top) / abs(mlX));
-		if ((mlY != 0)) sy = ((pRC->right - pRC->left) / abs(mlY));
+		if ((mlX != 0)) sx = ((pRC.bottom - pRC.top) / abs(mlX));
+		if ((mlY != 0)) sy = ((pRC.right - pRC.left) / abs(mlY));
 
 		x1 = 0;
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
 			if ((mlX != 0))
 				if ((j % sx) == 0) x1++;
 			y1 = 0;
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				if ((mlY != 0))
 					if ((i % sy) == 0) y1++;
@@ -69,13 +69,13 @@ class Shear: public IAlgorithm
 				}
 				else y = j;
 
-				if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
-				if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
+				if ((x < pRC.left) || (x > (pRC.right - 1))) continue;
+				if ((y < pRC.top) || (y > (pRC.bottom - 1))) continue;
 
 				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 public:

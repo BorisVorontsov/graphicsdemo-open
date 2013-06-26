@@ -8,4 +8,4 @@ typedef enum tagALPHAMODE
 	AM_ALPHA_REPLACE			//Замена альфа-компоненты пикселя на указанную альфу
 } ALPHAMODE;
 
-BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, ULONG lSrcH, BYTE bAlpha, ALPHAMODE AlphaMode, LPRECT pRC, HWND hWndCallback = NULL);
+//BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, ULONG lSrcH, BYTE bAlpha, ALPHAMODE AlphaMode, LPRECT pRC, HWND hWndCallback = NULL);

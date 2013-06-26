@@ -6,7 +6,9 @@
 
 #include "IAlgorithm.h"
 
-class AlgorithmFactory
+#include "Singleton.h"
+
+class AlgorithmFactory: public pattern::SingletonStatic<AlgorithmFactory>
 {
 	typedef std::function<IAlgorithm*()> AlgoCreator;
 
@@ -23,8 +25,6 @@ class AlgorithmFactory
 public:
 	AlgorithmFactory();
 	~AlgorithmFactory();
-
-	static AlgorithmFactory &getInstance();
 
 	void regAlgorithm(const std::wstring &aMenu, AlgoCreator aFactory);
 

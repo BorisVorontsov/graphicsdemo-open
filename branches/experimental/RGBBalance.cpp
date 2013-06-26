@@ -22,14 +22,14 @@ class RGBBalance: public IAlgorithm
 	LONG mGOffset;
 	LONG mBOffset;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		ULONG lColor, lR, lG, lB;
 		LONG i, j;
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				lColor = GetPixel(pPixels, pBMI, i, j);
 
@@ -44,7 +44,7 @@ class RGBBalance: public IAlgorithm
 				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 public:

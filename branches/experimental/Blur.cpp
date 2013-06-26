@@ -22,26 +22,26 @@ class Blur: public IAlgorithm
 {
 	ULONG mLevel;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG x, x1, x2, x3;
 		LONG y, y1, y2, y3;
 		ULONG lColor, lR, lG, lB, lPixels;
 
-		y = pRC->top;
-		while (y < pRC->bottom)
+		y = pRC.top;
+		while (y < pRC.bottom)
 		{
 			y1 = y - (mLevel >> 1);
-			if (y1 < pRC->top) y1 = pRC->top;
+			if (y1 < pRC.top) y1 = pRC.top;
 			y2 = y + (mLevel >> 1);
-			if (y2 > (pRC->bottom - 1)) y2 = (pRC->bottom - 1);
-			x = pRC->left;
-			while (x < pRC->right)
+			if (y2 > (pRC.bottom - 1)) y2 = (pRC.bottom - 1);
+			x = pRC.left;
+			while (x < pRC.right)
 			{
 				x1 = x - (mLevel >> 1);
-				if (x1 < pRC->left) x1 = pRC->left;
+				if (x1 < pRC.left) x1 = pRC.left;
 				x2 = x + (mLevel >> 1);
-				if (x2 > (pRC->right - 1)) x2 = (pRC->right - 1);
+				if (x2 > (pRC.right - 1)) x2 = (pRC.right - 1);
 				lR = 0;
 				lG = 0;
 				lB = 0;
@@ -63,7 +63,7 @@ class Blur: public IAlgorithm
 				x++;
 			}
 
-			progressEvent(y, pRC->bottom);
+			progressEvent(y, pRC.bottom);
 			y++;
 		}
 	}

@@ -22,6 +22,7 @@ typedef struct tagIMGPROCINFO
 	HWND hWndCanvas;		//Окно, на котором будет отбражен эффект
 	HDC hDBDC;				//DC двойной буферизации, к которому будет применен эффект. Если не задан, то поток обработки возьмет DC окна hWndCanvas
 	HWND hWndProgress;		//Окно прогресса обработки
+	HWND hWndPerfomanceInfo;
 	RECT rcPicture;			//Область внутри hDCCanvas для изменения
 	DWORD dwReserved;
 } IMGPROCINFO, *LPIMGPROCINFO;
@@ -29,6 +30,7 @@ typedef struct tagIMGPROCINFO
 INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK CanvasProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK ProgressWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK PerformanceWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 UINT WINAPI ImgProcThreadMain(LPVOID pArg);
 
 #ifndef __USE_GDIPLUS__
@@ -58,11 +60,11 @@ bool GetEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid);
 
 BOOL GetAppPath(LPTSTR lpPath, DWORD dwPathLen, BOOL bAddQuotes = FALSE);
 
-SIZE_T GetOpenDialog(HINSTANCE hInstance, HWND hWnd, LPCTSTR lpTitle, LPTSTR lpFileName,
+/*SIZE_T GetOpenDialog(HINSTANCE hInstance, HWND hWnd, LPCTSTR lpTitle, LPTSTR lpFileName,
 					SIZE_T szFNSize, LPCTSTR lpFilter, DWORD dwFilterIndex, BOOL bMultiSelect);
 SIZE_T GetSaveDialog(HINSTANCE hInstance, HWND hWnd, LPCTSTR lpTitle, LPTSTR lpFileName,
 					SIZE_T szFNSize, LPCTSTR lpFilter, LPDWORD pFilterIndex, LPCTSTR lpDefExt,
-					LPCTSTR lpInitialDir = NULL);
+					LPCTSTR lpInitialDir = NULL);*/
 
 /*
 __inline void Randomize(){

@@ -21,7 +21,7 @@ class EdgeDetection: public IAlgorithm
 {
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LPBYTE pPixels2 = NULL;
 		ULONG lColor[9], lR, lG, lB;
@@ -30,14 +30,14 @@ class EdgeDetection: public IAlgorithm
 		pPixels2 = new BYTE[lBytesCnt];
 		memcpy(pPixels2, pPixels, lBytesCnt);
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
-				x = (i == pRC->left)?pRC->left + 1:i;
-				x = (i < (pRC->right - 1))?x:i - 1;
-				y = (j == pRC->top)?pRC->top + 1:j;
-				y = (j < (pRC->bottom - 1))?y:j - 1;
+				x = (i == pRC.left)?pRC.left + 1:i;
+				x = (i < (pRC.right - 1))?x:i - 1;
+				y = (j == pRC.top)?pRC.top + 1:j;
+				y = (j < (pRC.bottom - 1))?y:j - 1;
 
 				lColor[0] = GetPixel(pPixels2, pBMI, x, y);
 				lColor[1] = GetPixel(pPixels2, pBMI, x, y - 1);
@@ -66,7 +66,7 @@ class EdgeDetection: public IAlgorithm
 				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 

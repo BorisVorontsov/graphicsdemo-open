@@ -8,9 +8,12 @@
 #define IDD_PROGRESS                    107
 #define IDS_ODSTDFILTER                 108
 #define IDS_ODGDIPFILTER                109
+#define IDD_PERFORMANCEINFO             109
 #define IDS_SDSTDFILTER                 110
 #define IDS_SDGDIPFILTER                111
 #define IDS_ABOUTSTRING1                112
+#define IDB_BITMAP1                     112
+#define IDB_DEFAULTBITMAP               112
 #define IDS_ABOUTSTRING2                113
 #define IDC_PGBEP                       1033
 #define IDC_STCCANVAS                   1034
@@ -37,14 +40,19 @@
 #define ID_FILTERS_ALPHABLEND           40021
 #define IDM_FILTERS_ALPHABLEND          40022
 #define ID_TRANSFORMATION               40023
+#define ID_FILTERS                      40024
+#define ID_FILTERS40025                 40025
+#define ID_FILE_RESET                   40026
+#define ID_OPTIONS_PERFOMANCEMODE       40027
+#define ID_OPTIONS_PERFORMANCEMODE      40028
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        109
-#define _APS_NEXT_COMMAND_VALUE         40024
+#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_COMMAND_VALUE         40029
 #define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -17,27 +17,27 @@ class Median: public IAlgorithm
 {
 	ULONG mlLevel;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG x, x1, x2, x3;
 		LONG y, y1, y2, y3;
 		ULONG lColor, lPixels, n;
 		LPBYTE pRGBArr;
 
-		y = pRC->top;
-		while (y < pRC->bottom)
+		y = pRC.top;
+		while (y < pRC.bottom)
 		{
 			y1 = y - (mlLevel >> 1);
-			if (y1 < pRC->top) y1 = pRC->top;
+			if (y1 < pRC.top) y1 = pRC.top;
 			y2 = y + (mlLevel >> 1);
-			if (y2 > (pRC->bottom - 1)) y2 = (pRC->bottom - 1);
-			x = pRC->left;
-			while (x < pRC->right)
+			if (y2 > (pRC.bottom - 1)) y2 = (pRC.bottom - 1);
+			x = pRC.left;
+			while (x < pRC.right)
 			{
 				x1 = x - (mlLevel >> 1);
-				if (x1 < pRC->left) x1 = pRC->left;
+				if (x1 < pRC.left) x1 = pRC.left;
 				x2 = x + (mlLevel >> 1);
-				if (x2 > (pRC->right - 1)) x2 = (pRC->right - 1);
+				if (x2 > (pRC.right - 1)) x2 = (pRC.right - 1);
 				lPixels = (x2 - x1 + 1) * (y2 - y1 + 1);
 				//В целях оптимизации выделяем один массив на три компонента
 				pRGBArr = new BYTE[lPixels * 3];
@@ -64,7 +64,7 @@ class Median: public IAlgorithm
 				x++;
 			}
 
-			progressEvent(y, pRC->bottom);
+			progressEvent(y, pRC.bottom);
 			y++;
 		}
 	}

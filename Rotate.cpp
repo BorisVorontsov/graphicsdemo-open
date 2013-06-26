@@ -32,7 +32,7 @@ class Rotate: public IAlgorithm
 	LONG mX;
 	LONG mY;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LPBYTE pPixels2 = NULL;
 		LONG i, j, x, y;
@@ -41,8 +41,8 @@ class Rotate: public IAlgorithm
 
 		if( -1 == mX && -1 == mY)
 		{
-			mX = (pRC->right + pRC->left )/ 2;
-			mY = (pRC->top + pRC->bottom )/ 2;
+			mX = (pRC.right + pRC.left )/ 2;
+			mY = (pRC.top + pRC.bottom )/ 2;
 		}
 
 		pPixels2 = new BYTE[lBytesCnt];
@@ -50,22 +50,22 @@ class Rotate: public IAlgorithm
 
 		dblRad = (double)(mlAngle * (3.14159265358979 / 180));
 
-		mX += pRC->left;
-		mY += pRC->top;
+		mX += pRC.left;
+		mY += pRC.top;
 
 		ReverseBytes((LPBYTE)&mcrBkColor, 3);
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
 			}
 		}
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				switch (mlDirection)
 				{
@@ -82,13 +82,13 @@ class Rotate: public IAlgorithm
 						break;
 				}
 
-				if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
-				if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
+				if ((x < pRC.left) || (x > (pRC.right - 1))) continue;
+				if ((y < pRC.top) || (y > (pRC.bottom - 1))) continue;
 
 				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 

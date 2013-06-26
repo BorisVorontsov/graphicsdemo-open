@@ -74,6 +74,46 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PERFORMANCEINFO DIALOGEX 0, 0, 179, 26
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "Microsoft Sans Serif", 700, 0, 0xCC
+BEGIN
+    LTEXT           "The is no progress in performance mode",IDC_STATIC,23,9,133,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_PERFORMANCEINFO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 172
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 19
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_DEFAULTBITMAP       BITMAP                  "Resources\\Sample.bmp"
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -179,23 +219,23 @@ END
 // Menu
 //
 
-IDR_MAINMENU MENUEX
+IDR_MAINMENU MENU
 BEGIN
-    POPUP "&File",                          65535,MFT_STRING,MFS_ENABLED
+    POPUP "&File"
     BEGIN
-        MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE,MFT_STRING,MFS_ENABLED
-        MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE
+        MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS
+        MENUITEM "Reset",                       IDM_CLEAR
     END
-    POPUP "F&ilters",                       65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    MENUITEM "F&ilters",                    ID_FILTERS40025
+    MENUITEM "&Transformation",             ID_TRANSFORMATION
+    POPUP "Options"
     BEGIN
-        MENUITEM "&Alpha Blend",                IDM_FILTERS_ALPHABLEND,MFT_STRING,MFS_GRAYED
-        MENUITEM MFT_SEPARATOR
+        MENUITEM "Performance mode",            ID_OPTIONS_PERFORMANCEMODE
     END
-    MENUITEM "&Transformation",             ID_TRANSFORMATION,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
-    MENUITEM "&Clear",                      IDM_CLEAR,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
-    POPUP "&Help",                          65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    POPUP "&Help"
     BEGIN
-        MENUITEM "&About",                      IDM_HELP_ABOUT,MFT_STRING,MFS_ENABLED
+        MENUITEM "&About",                      IDM_HELP_ABOUT
     END
 END
 

@@ -575,6 +575,7 @@
     <ClCompile Include="EdgeDetection.cpp" />
     <ClCompile Include="EmptyFilter.cpp" />
     <ClCompile Include="GammaCorrection.cpp" />
+    <ClCompile Include="GdiPlusSaveLoad.cpp" />
     <ClCompile Include="GraphicsDemo.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -588,11 +589,15 @@
     <ClCompile Include="GraphicsHelperFunctions.cpp" />
     <ClCompile Include="GrayScale.cpp" />
     <ClCompile Include="IAlgorithm.cpp" />
+    <ClCompile Include="ISaveLoad.cpp" />
+    <ClCompile Include="Ladybug_png.cpp" />
     <ClCompile Include="Median.cpp" />
     <ClCompile Include="RGBBalance.cpp" />
     <ClCompile Include="Rotate.cpp" />
+    <ClCompile Include="Sample_jpg.cpp" />
     <ClCompile Include="Shear.cpp" />
     <ClCompile Include="StdAfx.cpp" />
+    <ClCompile Include="StdSaveLoad.cpp" />
     <ClCompile Include="StrParser.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -614,6 +619,10 @@
     <ClInclude Include="GraphicsDemo.h" />
     <ClInclude Include="GraphicsHelperFunctions.h" />
     <ClInclude Include="IAlgorithm.h" />
+    <ClInclude Include="ISaveLoad.h" />
+    <ClInclude Include="Ladybug_png.h" />
+    <ClInclude Include="Sample_jpg.h" />
+    <ClInclude Include="Singleton.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="StrParser.h" />
     <ClInclude Include="Resource.h" />
@@ -632,6 +641,11 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="bitmap1.bmp" />
+    <Image Include="bitmap2.bmp" />
+    <Image Include="Resources\Sample.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

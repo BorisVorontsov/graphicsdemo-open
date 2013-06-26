@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "AlgorithmFactory.h"
 
-
-#include <mutex>
 #include <assert.h>
 #include <sstream>
 
@@ -13,25 +11,6 @@ AlgorithmFactory::AlgorithmFactory(void)
 
 AlgorithmFactory::~AlgorithmFactory(void)
 {
-}
-
-AlgorithmFactory &AlgorithmFactory::getInstance()
-{
-	static AlgorithmFactory *volatile tInstancePtr = NULL;
-
-	if( !tInstancePtr )
-	{
-		static std::mutex tMutex;
-		std::lock_guard<std::mutex> tlock(tMutex);
-
-		if( !tInstancePtr )
-		{
-			static AlgorithmFactory tInstance;
-			tInstancePtr = &tInstance;
-		}
-	}
-
-	return *tInstancePtr;
 }
 
 

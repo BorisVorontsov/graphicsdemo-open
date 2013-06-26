@@ -31,7 +31,7 @@ class Waves: public IAlgorithm
 	LONG mlDirection;
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG i, j, x, y;
 		LPBYTE pPixels2 = NULL;
@@ -44,17 +44,17 @@ class Waves: public IAlgorithm
 
 		ReverseBytes((LPBYTE)&mcrBkColor, 3);
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
 			}
 		}
 
-		for (j = pRC->top; j < pRC->bottom; j++)
+		for (j = pRC.top; j < pRC.bottom; j++)
 		{
-			for (i = pRC->left; i < pRC->right; i++)
+			for (i = pRC.left; i < pRC.right; i++)
 			{
 				switch (mlDirection)
 				{
@@ -71,13 +71,13 @@ class Waves: public IAlgorithm
 						break;
 				}
 
-				if ((x < pRC->left) || (x > (pRC->right - 1))) continue;
-				if ((y < pRC->top) || (y > (pRC->bottom - 1))) continue;
+				if ((x < pRC.left) || (x > (pRC.right - 1))) continue;
+				if ((y < pRC.top) || (y > (pRC.bottom - 1))) continue;
 
 				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
 			}
 
-			progressEvent(j, pRC->bottom);
+			progressEvent(j, pRC.bottom);
 		}
 	}
 public:

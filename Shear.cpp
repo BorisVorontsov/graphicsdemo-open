@@ -20,7 +20,7 @@ BOOL Shear(HDC hDC, ULONG lW, ULONG lH, LONG lX, LONG lY, COLORREF crBkColor, LP
 	LPBITMAPINFO pBMI = NULL;
 	LONG i, j, x, x1, y, y1, sx, sy;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
 		if (pPixels1)

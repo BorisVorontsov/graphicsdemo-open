@@ -21,72 +21,6 @@ LANGUAGE LANG_RUSSIAN, SUBLANG_NEUTRAL
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// String Table
-//
-
-STRINGTABLE
-BEGIN
-    IDS_ODSTDFILTER         "BMP files (*.bmp)|*.bmp|All files (*.*)|*.*|"
-    IDS_ODGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|WMF files (*.wmf)|*.wmf|EMF files (*.emf)|*.emf|All files (*.*)|*.*|"
-    IDS_SDSTDFILTER         "BMP files (*.bmp)|*.bmp|"
-    IDS_SDGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_ABOUTSTRING1        "Открытый проект ""%s""\n"
-    IDS_ABOUTSTRING2        "Авторские права © BV и участники проекта, 2007 - 2010, для Sources.ru"
-END
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Russian (Russia) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian (Russia) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Dialog
 //
 
@@ -162,7 +96,7 @@ BEGIN
             VALUE "CompanyName", "Boris Vorontsov"
             VALUE "FileDescription", "Graphics Demo"
             VALUE "FileVersion", "1, 1, 0, 42"
-            VALUE "LegalCopyright", "Copyright © 2007 - 2010 Boris Vorontsov"
+            VALUE "LegalCopyright", "Авторские права © 2007 - 2013 BV и участники проекта"
             VALUE "OriginalFilename", "GraphicsDemo.exe"
             VALUE "ProductVersion", "1, 1, 0, 42"
         END
@@ -181,12 +115,12 @@ END
 
 IDR_MAINMENU MENUEX
 BEGIN
-    POPUP "&File",                          65535,MFT_STRING,MFS_ENABLED
+    POPUP "&Файл",                          65535,MFT_STRING,MFS_ENABLED
     BEGIN
-        MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE,MFT_STRING,MFS_ENABLED
-        MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Загрузить...",               IDM_FILE_LOADPICTURE,MFT_STRING,MFS_ENABLED
+        MENUITEM "&Сохранить Как...",           IDM_FILE_SAVEPICTUREAS,MFT_STRING,MFS_ENABLED
     END
-    POPUP "F&ilters",                       65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    POPUP "Ф&ильтры",                       65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
     BEGIN
         MENUITEM "&Blur",                       IDM_FILTERS_BLUR,MFT_STRING,MFS_ENABLED
         MENUITEM "B&lur (OpenCL)",              IDM_FILTERS_BLUR_OCL,MFT_STRING,MFS_GRAYED
@@ -199,16 +133,16 @@ BEGIN
         MENUITEM MFT_SEPARATOR
         MENUITEM "&Alpha Blend",                IDM_FILTERS_ALPHABLEND,MFT_STRING,MFS_GRAYED
     END
-    POPUP "&Transformation",                65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    POPUP "&Трансформации",                 65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
     BEGIN
         MENUITEM "&Shear",                      IDM_TRANSFORMATION_SHEAR,MFT_STRING,MFS_ENABLED
         MENUITEM "R&otate",                     IDM_TRANSFORMATION_ROTATE,MFT_STRING,MFS_ENABLED
         MENUITEM "&Waves",                      IDM_TRANSFORMATION_WAVES,MFT_STRING,MFS_ENABLED
     END
-    MENUITEM "&Clear",                      IDM_CLEAR,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
-    POPUP "&Help",                          65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    MENUITEM "&Очистить",                   IDM_CLEAR,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
+    POPUP "&Справка",                       65535,MFT_STRING | MFT_RIGHTJUSTIFY,MFS_ENABLED
     BEGIN
-        MENUITEM "&About",                      IDM_HELP_ABOUT,MFT_STRING,MFS_ENABLED
+        MENUITEM "&О Программе",                IDM_HELP_ABOUT,MFT_STRING,MFS_ENABLED
     END
 END
 
@@ -221,7 +155,63 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON                ICON                    "GD_ICON.ico"
-#endif    // English (United States) resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ODSTDFILTER         "BMP files (*.bmp)|*.bmp|All files (*.*)|*.*|"
+    IDS_ODGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|WMF files (*.wmf)|*.wmf|EMF files (*.emf)|*.emf|All files (*.*)|*.*|"
+    IDS_SDSTDFILTER         "BMP files (*.bmp)|*.bmp|"
+    IDS_SDGDIPFILTER        "BMP files (*.bmp)|*.bmp|JPEG files (*.jpg; *.jpeg)|*.jpg; *.jpeg|GIF files (*.gif)|*.gif|TIFF files (*.tif; *.tiff)|*.tif; *.tiff|PNG files (*.png)|*.png|"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ABOUTSTRING1        "Открытый проект ""%s""\n"
+    IDS_ABOUTSTRING2        "Авторские права © BV и участники проекта, 2007 - 2013, для Sources.ru"
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian (Russia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

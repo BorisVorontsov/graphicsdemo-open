@@ -17,7 +17,7 @@ BOOL Contrast(HDC hDC, ULONG lW, ULONG lH, LONG lOffset, LPRECT pRC, HWND hWndCa
 	ULONG lColor;
 	LONG i, j, lR, lG, lB, lLevel = abs(lOffset);
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)

@@ -17,13 +17,13 @@
 
 static HINSTANCE hAppInstance;
 
-static volatile SYSTEM_INFO SI = {0};
+static volatile SYSTEM_INFO SI = {};
 
-static TCHAR lpAppPath[MAX_PATH] = {0};
-static TCHAR lpPic1Path[MAX_PATH] = {0};
+static TCHAR lpAppPath[MAX_PATH] = {};
+static TCHAR lpPic1Path[MAX_PATH] = {};
 
 #ifdef __USE_GDIPLUS__
-static TCHAR lpPic2Path[MAX_PATH] = {0};
+static TCHAR lpPic2Path[MAX_PATH] = {};
 #endif
 
 static LPCTSTR lpGDWndClass = TEXT("GraphicsDemo_WndClass");
@@ -37,14 +37,14 @@ static HBITMAP hDBBitmap, hOldDBBitmap;
 static volatile HANDLE hImgProcThread;
 static UINT uImgProcThreadID;
 
-static volatile IMGPROCINFO IPI = {0};
+static volatile IMGPROCINFO IPI = {};
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 					   HINSTANCE hPrevInstance,
 					   LPTSTR lpCmdLine,
 					   int nCmdShow)
 {
-	WNDCLASSEX wcex = {0};
+	WNDCLASSEX wcex = {};
 	MSG msg;
 
 	hAppInstance = hInstance;
@@ -128,7 +128,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		case WM_ERASEBKGND:
 		{
-			RECT rcClient = {0};
+			RECT rcClient = {};
 			HDC hDC = (HDC)wParam;
 			GetClientRect(hWnd, &rcClient);
 			FillRect(hDC, &rcClient, (HBRUSH)GetStockObject(BLACK_BRUSH));
@@ -140,8 +140,8 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				case IDM_FILE_LOADPICTURE:
 				{
-					TCHAR lpODFile[MAX_PATH] = {0};
-					TCHAR lpODFilter[MAX_PATH] = {0};
+					TCHAR lpODFile[MAX_PATH] = {};
+					TCHAR lpODFilter[MAX_PATH] = {};
 
 #ifndef __USE_GDIPLUS__
 					LoadString(hAppInstance, IDS_ODSTDFILTER, lpODFilter, MAX_PATH);
@@ -154,7 +154,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 							lpODFilter[i] = '\0';
 					}
 					_tcscpy(lpODFile, lpPic1Path);
-					if (GetOpenDialog(hAppInstance, hWnd, TEXT("Load Picture"), lpODFile,
+					if (GetOpenDialog(hAppInstance, hWnd, TEXT("Загрузка изображения"), lpODFile,
 						MAX_PATH - 1, lpODFilter, 1, FALSE))
 					{
 						_tcscpy(lpPic1Path, lpODFile);
@@ -164,9 +164,9 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				case IDM_FILE_SAVEPICTUREAS:
 				{
-					TCHAR lpSDFile[MAX_PATH] = {0};
-					TCHAR lpSDFilter[MAX_PATH] = {0};
-					TCHAR lpExt[64] = {0};
+					TCHAR lpSDFile[MAX_PATH] = {};
+					TCHAR lpSDFilter[MAX_PATH] = {};
+					TCHAR lpExt[64] = {};
 					DWORD dwFilterIndex = 1;
 
 #ifndef __USE_GDIPLUS__
@@ -183,7 +183,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					SP_ExtractName(lpPic1Path, lpSDFile);
 					SP_ExtractLeftPart(lpSDFile, lpSDFile, '.');
 
-					if (GetSaveDialog(hAppInstance, hWnd, TEXT("Save Picture As"), lpSDFile,
+					if (GetSaveDialog(hAppInstance, hWnd, TEXT("Сохранение изображения"), lpSDFile,
 						MAX_PATH - 1, lpSDFilter, &dwFilterIndex, NULL))
 					{
 						SP_ExtractRightPart(lpSDFile, lpExt, '.');
@@ -248,14 +248,14 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				case IDM_HELP_ABOUT:
 				{
-					TCHAR lpAboutString[256] = {0};
+					TCHAR lpAboutString[256] = {};
 					TCHAR lpTmp[128];
 					LoadString(hAppInstance, IDS_ABOUTSTRING1, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
 					_stprintf(lpAboutString, lpTmp, APP_NAME);
 					LoadString(hAppInstance, IDS_ABOUTSTRING2, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
 					_tcscat(lpAboutString, lpTmp);
 					
-					MSGBOXPARAMS MBP = {0};
+					MSGBOXPARAMS MBP = {};
 					MBP.cbSize = sizeof(MBP);
 					MBP.hInstance = hAppInstance;
 					MBP.dwStyle = MB_USERICON | MB_OK;
@@ -393,7 +393,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 #ifdef __TESTING_MODE__
 	LARGE_INTEGER intFreq, intStart, intEnd;
-	TCHAR lpResult[128] = {0};
+	TCHAR lpResult[128] = {};
 	QueryPerformanceFrequency(&intFreq);
 	QueryPerformanceCounter(&intStart);
 #endif
@@ -412,8 +412,8 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 			RGBBalance(hDC, rcPicture.right, rcPicture.bottom, -12, 4, -6, &rcCanvas, IPI.hWndProgress);
 			break;
 		case IDM_FILTERS_GRAYSCALE:
-			GrayScale(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
-			//GrayScale_Fast(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas, IPI.hWndProgress);
+			//GrayScale(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas/*, IPI.hWndProgress*/);
+			GrayScale_Fast(hDC, rcPicture.right, rcPicture.bottom, &rcCanvas/*, IPI.hWndProgress*/);
 			break;
 		case IDM_FILTERS_GAMMACORRECTION:
 			GammaCorrection(hDC, rcPicture.right, rcPicture.bottom, 0.9, &rcCanvas, IPI.hWndProgress);
@@ -515,7 +515,7 @@ void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName)
 	HDC hDCCanvas1 = (hDCCanvas)?hDCCanvas:GetDC(hWndCanvas);
 
 	HBITMAP hBitmap, hOldBitmap;
-	BITMAP BMD = {0};
+	BITMAP BMD = {};
 	hBitmap = (HBITMAP)LoadImage(hAppInstance, lpFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 	GetObject(hBitmap, sizeof(BMD), &BMD);
 		
@@ -553,8 +553,8 @@ void LoadPicture_Std(HWND hWndCanvas, HDC hDCCanvas, LPCTSTR lpFileName)
 void SavePicture_Std(HDC hDCCanvas, LPCTSTR lpFileName)
 {
 	HANDLE hFile;
-	BITMAPFILEHEADER BFH = {0};
-	BITMAPINFO BMI = {0}, BMITmp = {0};
+	BITMAPFILEHEADER BFH = {};
+	BITMAPINFO BMI = {}, BMITmp = {};
 	LPBYTE pData = NULL;
 	ULONG lDataSize, lColors, lPaletteSize, lWritten;
 	HDC hCDC;
@@ -666,7 +666,7 @@ void SavePicture_Gdiplus(HDC hDCCanvas, LPCTSTR lpFileName)
 	CLSID EncClsid;
 	EncoderParameters *pEncParams = NULL;
 	ULONG uEncParamsSize;
-	TCHAR lpExt[64] = {0};
+	TCHAR lpExt[64] = {};
 	LPTSTR lpFmt;
 
 	hCDC = CreateCompatibleDC(hDCCanvas);
@@ -805,7 +805,7 @@ SIZE_T GetOpenDialog(HINSTANCE hInstance,
 					DWORD dwFilterIndex,
 					BOOL bMultiSelect)
 {
-	OPENFILENAME OFN = {0};
+	OPENFILENAME OFN = {};
 
 	OFN.lStructSize = sizeof(OFN);
 	OFN.hInstance = hInstance;
@@ -836,7 +836,7 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 					LPCTSTR lpDefExt,
 					LPCTSTR lpInitialDir)
 {
-	OPENFILENAME OFN = {0};
+	OPENFILENAME OFN = {};
 
 	OFN.lStructSize = sizeof(OFN);
 	OFN.hInstance = hInstance;

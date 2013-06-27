@@ -25,7 +25,7 @@ BOOL Waves(HDC hDC, ULONG lW, ULONG lH, LONG lAmplitude, LONG lFrequency, LONG l
 	LONG i, j, x, y;
 	double dblFunc;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels1, &lBytesCnt, &pBMI)) {
 		if (pPixels1)

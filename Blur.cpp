@@ -26,7 +26,7 @@ BOOL Blur(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCallba
 	LONG y, y1, y2, y3;
 
 	//Параметры событий
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	//Получаем пиксели изображения
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {

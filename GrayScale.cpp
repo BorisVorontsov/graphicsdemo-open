@@ -14,7 +14,7 @@
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 class GrayScale: public IAlgorithm
 {
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		ULONG lColor, lR, lG, lB, lS;
 		LONG i, j;
@@ -23,7 +23,7 @@ class GrayScale: public IAlgorithm
 		{
 			for (i = pRC.left; i < pRC.right; i++)
 			{
-				lColor = GetPixel(pPixels, pBMI, i, j);
+				lColor = GetPixel(pPixels, pIMGDESCR, i, j);
 
 				//BGR -> RGB
 				lR = R_BGRA(lColor);
@@ -33,7 +33,7 @@ class GrayScale: public IAlgorithm
 				lS = (ULONG)(lR * 0.299 + lG * 0.587 + lB * 0.114);
 
 				//SSS -> BGR
-				SetPixel(pPixels, pBMI, i, j, BGR(lS, lS, lS));
+				SetPixel(pPixels, pIMGDESCR, i, j, BGR(lS, lS, lS));
 			}
 
 			progressEvent(j, pRC.bottom);
@@ -88,13 +88,13 @@ struct CalculatedCoeffs
 class GrayScaleFast: public IAlgorithm
 {
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		BYTE r, g, b, s;
 
 		static const CalculatedCoeffs precalc;
 
-		ULONG lStep = pBMI->bmiHeader.biBitCount / 8;
+		ULONG lStep = pIMGDESCR->cBitCount / 8;
 		for (ULONG i = 0; i < lBytesCnt; i+= lStep)
 		{
 

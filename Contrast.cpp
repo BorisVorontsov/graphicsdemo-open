@@ -13,7 +13,7 @@ class Contrast: public IAlgorithm
 {
 	LONG mOffset;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		ULONG lAB = 0;
 		ULONG lColor;
@@ -21,7 +21,7 @@ class Contrast: public IAlgorithm
 
 		for (j = pRC.top; j < pRC.bottom; j++) {
 			for (i = pRC.left; i < pRC.right; i++) {
-				lColor = GetPixel(pPixels, pBMI, i, j);
+				lColor = GetPixel(pPixels, pIMGDESCR, i, j);
 
 				lR = R_BGRA(lColor);
 				lG = G_BGRA(lColor);
@@ -37,7 +37,7 @@ class Contrast: public IAlgorithm
 		{
 			for (i = pRC.left; i < pRC.right; i++)
 			{
-				lColor = GetPixel(pPixels, pBMI, i, j);
+				lColor = GetPixel(pPixels, pIMGDESCR, i, j);
 
 				lR = R_BGRA(lColor);
 				lG = G_BGRA(lColor);
@@ -50,7 +50,7 @@ class Contrast: public IAlgorithm
 				lB = (ULONG)CheckBounds((LONG)(lB + ((lB - /*127.0*/(LONG)lAB) * ((double)((mOffset < 0)?-lLevel:lLevel) /
 					(double)(201 - (-lLevel + 100))))), (LONG)0, (LONG)255);
 
-				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+				SetPixel(pPixels, pIMGDESCR, i, j, BGR(lB, lG, lR));
 			}
 
 			progressEvent(j, pRC.bottom);

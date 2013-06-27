@@ -19,26 +19,26 @@ bool IAlgorithm::process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, H
 
 	LPBYTE pPixels = NULL;
 	ULONG lBytesCnt = 0;
-	LPBITMAPINFO pBMI = NULL;
+	LPIMAGEDESCR pIMGDESCR = NULL;
 	ULONG lW = rcPicture.right;
 	ULONG lH = rcPicture.bottom;
 
 	//Получаем пиксели изображения
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
+	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pIMGDESCR)) {
 		if (pPixels)
 			delete[] pPixels;
-		if (pBMI)
-			delete pBMI;
+		if (pIMGDESCR)
+			delete pIMGDESCR;
 		return false;
 	}
 
-	processImage(pBMI, pPixels, lBytesCnt, rcCanvas);
+	processImage(pIMGDESCR, pPixels, lBytesCnt, rcCanvas);
 
 	//Присваиваем измененные пиксели
-	SetImagePixels(hDC, lW, lH, pPixels, pBMI);
+	SetImagePixels(hDC, lW, lH, pPixels, pIMGDESCR);
 
 	delete[] pPixels;
-	delete pBMI;
+	delete pIMGDESCR;
 
 	mWndCallback = 0;
 

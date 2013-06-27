@@ -13,19 +13,12 @@
 //	lLevel			Радиус размывания
 //Возвращаемое значение: TRUE в случае успеха, FALSE в случае ошибки
 
-class Blur_OCL
+class Blur_OCL: public IAlgorithm
 {
 	ULONG mlLevel;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC){}
-
-	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND /*hWndCallback*/)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
-		LPBYTE pPixels = NULL;
-		ULONG lBytesCnt = 0;
-		LPBITMAPINFO pBMI = NULL;
-		ULONG lW = rcPicture.right;
-		ULONG lH = rcPicture.bottom;
 
 		cl_int intErr;
 	
@@ -41,8 +34,7 @@ class Blur_OCL
 		cl::vector<cl::Platform> vPlatforms;
 		cl::Platform::get(&vPlatforms);
 		if (vPlatforms.size() == 0) {
-			MessageBox(NULL, TEXT("Платформ OpenCL не обнаружено!"), TEXT("Ошибка"), MB_ICONEXCLAMATION);
-			return false;
+			throw TEXT("Платформ OpenCL не обнаружено!");
 		}
 
 		//Берем первую платформу
@@ -65,16 +57,7 @@ class Blur_OCL
 	#endif
 			_stprintf(lpMsg, TEXT("Не удалось создать среду исполнения с устройством GPU на базе выбранной платформы ( %s, %s )!\nВсего найдено платформ: %i"),
 				lpPfName, lpPfVendor, vPlatforms.size());
-			MessageBox(NULL, lpMsg, TEXT("Ошибка"), MB_ICONEXCLAMATION);
-			return false;
-		}
-
-		if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
-			if (pPixels)
-				delete[] pPixels;
-			if (pBMI)
-				delete pBMI;
-			return false;
+			throw lpMsg;
 		}
 
 		strExePath.resize(MAX_PATH, '\0');
@@ -119,14 +102,14 @@ class Blur_OCL
 				//Результат
 				kKernelBlur.setArg(1, bOutputImageBuffer);
 				//Ширина растра
-				kKernelBlur.setArg(2, lW);
+				kKernelBlur.setArg(2, pIMGDESCR->width);
 				//Высота
-				kKernelBlur.setArg(3, lH);
+				kKernelBlur.setArg(3, pIMGDESCR->height);
 				//Уровень
 				kKernelBlur.setArg(4, mlLevel);
 
 				//Потоки из набор потоков для обработки изображения будут выполняться для каждого столбца растра (lW * lH для каждого пикселя, в случае двухмерного GT)
-				size_t szGlobalThreads = lW;
+				size_t szGlobalThreads = pIMGDESCR->width;
 				//Задаем количество потоков для обработки изображения (блок OCL_WG_SIZE * OCL_WG_SIZE, в случае двухмерного LT)
 				size_t szLocalThreads = OCL_WG_SIZE;
 
@@ -152,12 +135,8 @@ class Blur_OCL
 			}
 		}
 
-		SetImagePixels(hDC, lW, lH, pPixels, pBMI);
+		SetImagePixels(hDC, pIMGDESCR->width, pIMGDESCR->height, pPixels, pIMGDESCR);
 
-		delete[] pPixels;
-		delete pBMI;
-
-		return true;
 	}
 public:
 	Blur_OCL(ULONG lLevel)

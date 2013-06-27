@@ -21,7 +21,7 @@ class EdgeDetection: public IAlgorithm
 {
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LPBYTE pPixels2 = NULL;
 		ULONG lColor[9], lR, lG, lB;
@@ -39,15 +39,15 @@ class EdgeDetection: public IAlgorithm
 				y = (j == pRC.top)?pRC.top + 1:j;
 				y = (j < (pRC.bottom - 1))?y:j - 1;
 
-				lColor[0] = GetPixel(pPixels2, pBMI, x, y);
-				lColor[1] = GetPixel(pPixels2, pBMI, x, y - 1);
-				lColor[2] = GetPixel(pPixels2, pBMI, x + 1, y - 1);
-				lColor[3] = GetPixel(pPixels2, pBMI, x + 1, y);
-				lColor[4] = GetPixel(pPixels2, pBMI, x + 1, y + 1);
-				lColor[5] = GetPixel(pPixels2, pBMI, x, y + 1);
-				lColor[6] = GetPixel(pPixels2, pBMI, x - 1, y + 1);
-				lColor[7] = GetPixel(pPixels2, pBMI, x - 1, y);
-				lColor[8] = GetPixel(pPixels2, pBMI, x - 1, y - 1);
+				lColor[0] = GetPixel(pPixels2, pIMGDESCR, x, y);
+				lColor[1] = GetPixel(pPixels2, pIMGDESCR, x, y - 1);
+				lColor[2] = GetPixel(pPixels2, pIMGDESCR, x + 1, y - 1);
+				lColor[3] = GetPixel(pPixels2, pIMGDESCR, x + 1, y);
+				lColor[4] = GetPixel(pPixels2, pIMGDESCR, x + 1, y + 1);
+				lColor[5] = GetPixel(pPixels2, pIMGDESCR, x, y + 1);
+				lColor[6] = GetPixel(pPixels2, pIMGDESCR, x - 1, y + 1);
+				lColor[7] = GetPixel(pPixels2, pIMGDESCR, x - 1, y);
+				lColor[8] = GetPixel(pPixels2, pIMGDESCR, x - 1, y - 1);
 
 				lR = (-1 * R_BGRA(lColor[1]) - 1 * R_BGRA(lColor[2]) - 1 * R_BGRA(lColor[3]) - 1 * R_BGRA(lColor[4])
 					 - 1 * R_BGRA(lColor[5]) - 1 * R_BGRA(lColor[6]) - 1 * R_BGRA(lColor[7]) - 1 * R_BGRA(lColor[8])
@@ -63,7 +63,7 @@ class EdgeDetection: public IAlgorithm
 				lG = (ULONG)CheckBounds((LONG)lG, (LONG)0, (LONG)255);
 				lB = (ULONG)CheckBounds((LONG)lB, (LONG)0, (LONG)255);
 
-				SetPixel(pPixels, pBMI, i, j, BGR(lB, lG, lR));
+				SetPixel(pPixels, pIMGDESCR, i, j, BGR(lB, lG, lR));
 			}
 
 			progressEvent(j, pRC.bottom);

@@ -23,7 +23,7 @@ BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, U
 {
 	LPBYTE pSrcPixels = NULL, pDstPixels = NULL;
 	ULONG lSrcBytesCnt = 0, lDstBytesCnt = 0;
-	LPBITMAPINFO pSrcBMI = NULL, pDstBMI = NULL;
+	LPIMAGEDESCR pSrcIMGDESCR = NULL, pDstIMGDESCR = NULL;
 	ULONG lSrcC, lDstC, lR, lG, lB;
 	LONG i, j;
 	BOOL bResult;
@@ -31,19 +31,19 @@ BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, U
 	volatile ONPROGRESSPARAMS ONPP = {0};
 
 	//ѕолучаем пиксели конечного изображени€
-	if (!GetImagePixels(hDstDC, lDstW, lDstH, &pDstPixels, &lDstBytesCnt, &pDstBMI)) {
+	if (!GetImagePixels(hDstDC, lDstW, lDstH, &pDstPixels, &lDstBytesCnt, &pDstIMGDESCR)) {
 		bResult = FALSE;
 		goto AB_Exit;
 	}
 
 	//ѕолучаем пиксели исходного изображени€
-	if (!GetImagePixels(hSrcDC, lSrcW, lSrcH, &pSrcPixels, &lSrcBytesCnt, &pSrcBMI)) {
+	if (!GetImagePixels(hSrcDC, lSrcW, lSrcH, &pSrcPixels, &lSrcBytesCnt, &pSrcIMGDESCR)) {
 		bResult = FALSE;
 		goto AB_Exit;
 	}
 
 	//Ќе работаем с изображени€ми ниже 24 бит на пиксель
-	if ((pDstBMI->bmiHeader.biBitCount < 24) || (pSrcBMI->bmiHeader.biBitCount < 24)) {
+	if ((pDstIMGDESCR->cBitCount < 24) || (pSrcIMGDESCR->cBitCount < 24)) {
 		bResult = FALSE;
 		goto AB_Exit;
 	}
@@ -52,22 +52,22 @@ BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, U
 	if ((lSrcW != (pRC->right - pRC->left)) || (lSrcH != (pRC->bottom - pRC->top)))
 	{
 		LPBYTE pTmpPixels;
-		LPBITMAPINFO pTmpBMI;
-		ResampleImagePixels(pSrcPixels, pSrcBMI, &pTmpPixels, &pTmpBMI, (pRC->right - pRC->left), (pRC->bottom - pRC->top));
+		LPIMAGEDESCR pTmpBMI;
+		ResampleImagePixels(pSrcPixels, pSrcIMGDESCR, &pTmpPixels, &pTmpBMI, (pRC->right - pRC->left), (pRC->bottom - pRC->top));
 		delete[] pSrcPixels;
-		delete pSrcBMI;
+		delete pSrcIMGDESCR;
 		pSrcPixels = pTmpPixels;
-		pSrcBMI = pTmpBMI;
-		lSrcW = pSrcBMI->bmiHeader.biWidth;
-		lSrcH = pSrcBMI->bmiHeader.biHeight;
+		pSrcIMGDESCR = pTmpBMI;
+		lSrcW = pSrcIMGDESCR->width;
+		lSrcH = pSrcIMGDESCR->height;
 	}
 
 	for (j = pRC->top; j < pRC->bottom; j++)
 	{
 		for (i = pRC->left; i < pRC->right; i++)
 		{
-			lDstC = GetPixel(pDstPixels, pDstBMI, i, j);
-			lSrcC = GetPixel(pSrcPixels, pSrcBMI, i - pRC->left, j - pRC->top);
+			lDstC = GetPixel(pDstPixels, pDstIMGDESCR, i, j);
+			lSrcC = GetPixel(pSrcPixels, pSrcIMGDESCR, i - pRC->left, j - pRC->top);
 
 			switch (AlphaMode)
 			{
@@ -93,7 +93,7 @@ BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, U
 					break;
 			}
 
-			SetPixel(pDstPixels, pDstBMI, i, j, BGRA(lB, lG, lR, A_BGRA(lDstC)));
+			SetPixel(pDstPixels, pDstIMGDESCR, i, j, BGRA(lB, lG, lR, A_BGRA(lDstC)));
 		}
 
 		if (hWndCallback)
@@ -104,7 +104,7 @@ BOOL AlphaBlend(HDC hDstDC, ULONG lDstW, ULONG lDstH, HDC hSrcDC, ULONG lSrcW, U
 		}
 	}
 
-	SetImagePixels(hDstDC, lDstW, lDstH, pDstPixels, pDstBMI);
+	SetImagePixels(hDstDC, lDstW, lDstH, pDstPixels, pDstIMGDESCR);
 
 	bResult = TRUE;
 
@@ -112,13 +112,13 @@ AB_Exit:
 
 	if (pDstPixels)
 		delete[] pDstPixels;
-	if (pDstBMI)
-		delete pDstBMI;
+	if (pDstIMGDESCR)
+		delete pDstIMGDESCR;
 
 	if (pSrcPixels)
 		delete[] pSrcPixels;
-	if (pSrcBMI)
-		delete pSrcBMI;
+	if (pSrcIMGDESCR)
+		delete pSrcIMGDESCR;
 
 	return bResult;
 }
@@ -128,7 +128,7 @@ AB_Exit:
 
 class AlphaBlendWrapp: public IAlgorithm
 {
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC){}
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC){}
 
 	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND hWndCallback)
 	{

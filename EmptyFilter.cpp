@@ -7,7 +7,7 @@
 
 class EmptyFilter: public IAlgorithm
 {
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)
 	{
 		ULONG lColor, lA, lR, lG, lB;
 		LONG i, j;
@@ -17,7 +17,7 @@ class EmptyFilter: public IAlgorithm
 		{
 			for (i = pRC->left; i < pRC->right; i++)
 			{
-				lColor = GetPixel(pPixels, pBMI, i, j);
+				lColor = GetPixel(pPixels, pIMGDESCR, i, j);
 
 				lA = A_BGRA(lColor);
 				lR = R_BGRA(lColor);
@@ -26,7 +26,7 @@ class EmptyFilter: public IAlgorithm
 
 				//...
 
-				SetPixel(pPixels, pBMI, i, j, BGRA(lB, lG, lR, lA));
+				SetPixel(pPixels, pIMGDESCR, i, j, BGRA(lB, lG, lR, lA));
 			}
 			//Отображение статуса выполнения (опциональный блок)
 			progressEvent(j, pRC->bottom);

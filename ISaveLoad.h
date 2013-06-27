@@ -9,7 +9,7 @@ public:
 
 	static ISaveLoadImpl* create();
 
-	virtual void LoadStandardmage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc) = 0;
+	virtual void LoadStandardImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc) = 0;
 	virtual void LoadImageFromFile(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc, const std::wstring &aPth) = 0;
 
 	virtual std::wstring getLoadFilter() = 0;

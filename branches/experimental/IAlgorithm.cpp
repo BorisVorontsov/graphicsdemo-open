@@ -17,28 +17,21 @@ bool IAlgorithm::process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, H
 {
 	mWndCallback = hWndCallback;
 
-	LPBYTE pPixels = NULL;
-	ULONG lBytesCnt = 0;
-	LPIMAGEDESCR pIMGDESCR = NULL;
+	std::vector<BYTE> pixels;
+
 	ULONG lW = rcPicture.right;
 	ULONG lH = rcPicture.bottom;
 
-	//Получаем пиксели изображения
-	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pIMGDESCR)) {
-		if (pPixels)
-			delete[] pPixels;
-		if (pIMGDESCR)
-			delete pIMGDESCR;
-		return false;
-	}
+	IMAGEDESCR imgDescr = {0};
 
-	processImage(pIMGDESCR, pPixels, lBytesCnt, rcCanvas);
+	//Получаем пиксели изображения
+	if (!GetImagePixels(hDC, lW, lH, pixels, imgDescr)) 
+		return false;
+
+	processImage(&imgDescr, &pixels[0], pixels.size(), rcCanvas);
 
 	//Присваиваем измененные пиксели
-	SetImagePixels(hDC, lW, lH, pPixels, pIMGDESCR);
-
-	delete[] pPixels;
-	delete pIMGDESCR;
+	SetImagePixels(hDC, lW, lH, &pixels[0], &imgDescr);
 
 	mWndCallback = 0;
 

@@ -13,13 +13,15 @@
 #include <algorithm>
 #include <string>
 
-
-
-void ComRelease(IUnknown *aIntf)
+namespace
 {
-	if( aIntf )
-		aIntf->Release();
+	void ComRelease(IUnknown *aIntf)
+	{
+		if( aIntf )
+			aIntf->Release();
+	}
 }
+
 
 class GdiPlusSaveLoad : public ISaveLoadImpl
 {

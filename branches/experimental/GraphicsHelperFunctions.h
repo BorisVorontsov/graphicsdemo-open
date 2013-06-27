@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 //Информация о растре
 typedef struct tagIMAGEDESCR
 {
@@ -21,13 +23,20 @@ typedef struct tagIMAGEDESCR
 //Код ошибки для функций работы с пикселями
 #define GP_INVALIDPIXEL			0xFFFFFFFF
 
-int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesCnt, LPIMAGEDESCR *ppIMGDESCR);
+int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, std::vector<BYTE> &ppPixels, IMAGEDESCR &ppIMGDESCR);
 int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPIMAGEDESCR pIMGDESCR);
 
+COLORREF GetPixel(const std::vector<BYTE> &pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y);
 COLORREF GetPixel(LPCBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y);
 void SetPixel(LPBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y, COLORREF crValue);
 
-void ResampleImagePixels(LPCBYTE pSrcPixels, LPIMAGEDESCR pSrcIMGDESCR, LPBYTE *ppDstPixels, LPIMAGEDESCR *ppDstIMGDESCR, ULONG lNewW, ULONG lNewH);
+void ResampleImagePixels(
+	const std::vector<BYTE> &srcPixels, 
+	const IMAGEDESCR &pSrcIMGDESCR, 
+	std::vector<BYTE> &dstPixels, 
+	IMAGEDESCR &pDstIMGDESCR, 
+	ULONG lNewW, ULONG lNewH);
+//void ResampleImagePixels(LPCBYTE pSrcPixels, LPIMAGEDESCR pSrcIMGDESCR, LPBYTE *ppDstPixels, LPIMAGEDESCR *ppDstIMGDESCR, ULONG lNewW, ULONG lNewH);
 
 void ReverseBytes(LPBYTE pData, DWORD dwDataSize);
 template <class T>

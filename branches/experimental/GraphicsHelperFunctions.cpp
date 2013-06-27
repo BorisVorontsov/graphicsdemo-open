@@ -6,6 +6,8 @@
 
 #include "GraphicsHelperFunctions.h"
 
+#include <vector>
+
 //Внутренняя вспомогательная функция
 //Параметры:
 //	hDC				DC с изображением
@@ -17,7 +19,14 @@
 //ВАЖНО: массив ppPixels и структура ppIMGDESCR выделяются функцией посредством new, и вызывающий отвественнен за
 //освобождение ресурсов, посредством вызова delete[] для ppPixels и delete для ppIMGDESCR
 //Возвращаемое значение: количество полученных строк растра в случае успеха, 0 в случае ошибки
-int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesCnt, LPIMAGEDESCR *ppIMGDESCR)
+//int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesCnt, LPIMAGEDESCR *ppIMGDESCR)
+int GetImagePixels(
+	HDC hDC, 
+	ULONG lW, 
+	ULONG lH, 
+	//LPBYTE *ppPixels, 
+	std::vector<BYTE> &ppPixels,
+	IMAGEDESCR &ppIMGDESCR)
 {
 	HDC hTmpDC;
 	HBITMAP hOldBitmap, hTmpBitmap;
@@ -29,18 +38,21 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 	//Не работаем с изображениями ниже 24 bpp (TrueColor)
 	if ((BPP != 24) && (BPP != 32)) return 0;
 
+	size_t bytesCnt = 0;
+
 	switch (BPP)
 	{
 		case 24:
-			*pBytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
-			*pBytesCnt += ((*pBytesCnt * lH + 3) / 4) * 4;
+			bytesCnt = (((BPP / 8) * lW + 3) / 4) * 4;
+			bytesCnt += ((bytesCnt * lH + 3) / 4) * 4;
 			break;
 		case 32:
-			*pBytesCnt = lW * lH * (BPP / 8);
+			bytesCnt = lW * lH * (BPP / 8);
 			break;
 	}
 
-	*ppPixels = new BYTE[*pBytesCnt];
+	//*ppPixels = new BYTE[*pBytesCnt];
+	ppPixels.resize(bytesCnt);
 
 	hTmpDC = CreateCompatibleDC(hDC);
 	hTmpBitmap = CreateCompatibleBitmap(hDC, lW, lH);
@@ -54,14 +66,14 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 	BMI.bmiHeader.biBitCount = BPP;
 	BMI.bmiHeader.biCompression = BI_RGB;
 
-	intScanLines = GetDIBits(hTmpDC, hTmpBitmap, 0, lH, *ppPixels, &BMI, DIB_RGB_COLORS);
+	intScanLines = GetDIBits(hTmpDC, hTmpBitmap, 0, lH, &ppPixels[0], &BMI, DIB_RGB_COLORS);
 
-	*ppIMGDESCR = new IMAGEDESCR;
-	ZeroMemory(*ppIMGDESCR, sizeof(IMAGEDESCR));
+	//*ppIMGDESCR = new IMAGEDESCR;
+	//ZeroMemory(*ppIMGDESCR, sizeof(IMAGEDESCR));
 
-	((LPIMAGEDESCR)*ppIMGDESCR)->width = BMI.bmiHeader.biWidth;
-	((LPIMAGEDESCR)*ppIMGDESCR)->height = BMI.bmiHeader.biHeight;
-	((LPIMAGEDESCR)*ppIMGDESCR)->cBitCount = (char)BMI.bmiHeader.biBitCount;
+	ppIMGDESCR.width = BMI.bmiHeader.biWidth;
+	ppIMGDESCR.height = BMI.bmiHeader.biHeight;
+	ppIMGDESCR.cBitCount = (char)BMI.bmiHeader.biBitCount;
 
 	SelectObject(hTmpDC, hOldBitmap);
 	DeleteObject(hTmpBitmap);
@@ -105,6 +117,11 @@ int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPIMAGEDESCR pI
 //	y				y-координата пикселя
 //Возвращаемое значение: пиксель по заданным координатам в BGR[A] в случае успеха,
 //GP_INVALIDPIXEL в случае ошибки
+COLORREF GetPixel(const std::vector<BYTE> &pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y)
+{
+	return GetPixel(&pPixels[0], pIMGDESCR, x, y);
+}
+
 COLORREF GetPixel(LPCBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y)
 {
 	if ((x < 0) || (x >= pIMGDESCR->width)) return GP_INVALIDPIXEL;
@@ -179,8 +196,8 @@ void SetPixel(LPBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y, COLORREF c
 
 //Внутренняя вспомогательная функция
 //Параметры:
-//	pSrcPixels		Указатель на массив пикселей для масштабирования
-//	pSrcIMGDESCR	Указатель на структуру IMAGEDESCR, связанную с массивом пикселей
+//	srcPixels		Указатель на массив пикселей для масштабирования
+//	srcIMGDESCR	Указатель на структуру IMAGEDESCR, связанную с массивом пикселей
 //	ppDstPixels		Указатель на переменную, принимающую результирующий массив пикселей
 //	ppDstIMGDESCR	Указатель на переменную, принимающую указатель на структуру IMAGEDESCR, описывающую результирующий массив пикселей
 //	lNewW			Новая шинира изображения
@@ -188,43 +205,44 @@ void SetPixel(LPBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y, COLORREF c
 //ВАЖНО: массив ppDstPixels и структура pDstIMGDESCR выделяются функцией посредством new, и вызывающий отвественнен за
 //освобождение ресурсов, посредством вызова delete[] для ppDstPixels и delete для pDstIMGDESCR
 //Функция не возвращает значений
-void ResampleImagePixels(LPCBYTE pSrcPixels, LPIMAGEDESCR pSrcIMGDESCR, LPBYTE *ppDstPixels, LPIMAGEDESCR *pDstIMGDESCR, ULONG lNewW, ULONG lNewH)
+
+void ResampleImagePixels(const std::vector<BYTE> &srcPixels, const IMAGEDESCR &srcIMGDESCR, std::vector<BYTE> &dstPixels, IMAGEDESCR &pDstIMGDESCR, ULONG lNewW, ULONG lNewH)
 {
-	ULONG lNewSize = lNewW * lNewH * (pSrcIMGDESCR->cBitCount >> 3);
-	*ppDstPixels = new BYTE[lNewSize];
-	memset(*ppDstPixels, 0, lNewSize);
+	size_t Depth = (srcIMGDESCR.cBitCount >> 3);
+	size_t lNewSize = lNewW * lNewH * Depth;
+	dstPixels.resize(lNewSize, 0);
 
-	*pDstIMGDESCR = new IMAGEDESCR;
-	memcpy(*pDstIMGDESCR, pSrcIMGDESCR, sizeof(IMAGEDESCR));
+	pDstIMGDESCR		= srcIMGDESCR;
+	pDstIMGDESCR.width	= lNewW;
+	pDstIMGDESCR.height = lNewH;
 
-	((LPIMAGEDESCR)*pDstIMGDESCR)->width = lNewW;
-	((LPIMAGEDESCR)*pDstIMGDESCR)->height = lNewH;
+	const unsigned char *source_data	= &srcPixels[0];
+	unsigned char *target_data			= &dstPixels[0];
 
-	ULONG lSrcW = pSrcIMGDESCR->width;
-	ULONG lSrcH = pSrcIMGDESCR->height;
+	const long old_height = srcIMGDESCR.height;
+	const long old_width  = srcIMGDESCR.width;
+	const long x_delta = (old_width<<16) / lNewW;
+	const long y_delta = (old_height<<16) / lNewH;
 
-	double dblXR = (double)lSrcW / (double)lNewW;
-	double dblYR = (double)lSrcH / (double)lNewH;
-	ULONG lSrcPos, lDstPos;
+	unsigned char* dest_pixel = target_data;
 
-	for (ULONG j = 0; j < lNewH; j++)
+	long y = 0;
+	for ( size_t j = 0; j < lNewH; j++ )
 	{
-		for (ULONG i = 0; i < lNewW; i++)
+		const unsigned char* src_line = &source_data[(y>>16)*old_width*Depth];
+
+		long x = 0;
+		for ( size_t i = 0; i < lNewW; i++ )
 		{
+			const unsigned char* src_pixel = &src_line[(x>>16)*Depth];
+			for( size_t cnt = 0; cnt < Depth; ++cnt )
+				dest_pixel[cnt] = src_pixel[cnt];
+			dest_pixel += Depth;
 
-			lSrcPos = ULONG((floor(j * dblYR) * lSrcW) + floor(i * dblXR));
-			lDstPos = (j * lNewW) + i;
-
-			switch (pSrcIMGDESCR->cBitCount)
-			{
-				case 24:
-					((RGBTRIPLE *)*ppDstPixels)[lDstPos] = ((RGBTRIPLE *)pSrcPixels)[lSrcPos];
-					break;
-				case 32:
-					((ULONG *)*ppDstPixels)[lDstPos] = ((ULONG *)pSrcPixels)[lSrcPos];
-					break;
-			}
+			x += x_delta;
 		}
+
+		y += y_delta;
 	}
 }
 

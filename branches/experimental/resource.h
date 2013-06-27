@@ -3,7 +3,6 @@
 // Used by GraphicsDemo.rc
 //
 #define IDD_MAINWND                     101
-#define IDI_ICON                        103
 #define IDR_MAINMENU                    104
 #define IDD_PROGRESS                    107
 #define IDS_ODSTDFILTER                 108
@@ -15,6 +14,8 @@
 #define IDB_BITMAP1                     112
 #define IDB_DEFAULTBITMAP               112
 #define IDS_ABOUTSTRING2                113
+#define IDI_ICON1                       114
+#define IDI_ICON                        114
 #define IDC_PGBEP                       1033
 #define IDC_STCCANVAS                   1034
 #define IDM_FILTERS_BLUR                40001
@@ -51,7 +52,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_RESOURCE_VALUE        115
 #define _APS_NEXT_COMMAND_VALUE         40029
 #define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           101

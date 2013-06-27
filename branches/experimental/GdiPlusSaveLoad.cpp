@@ -83,7 +83,7 @@ public:
 		DoLoadImage(pImage, aLimit, aResultDims, hwnd, hdc);
 	}
 
-	virtual void LoadStandartImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+	virtual void LoadStandardmage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
 	{
 		// memory...
 		IStream *spStream = 0;

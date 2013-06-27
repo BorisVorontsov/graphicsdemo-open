@@ -21,7 +21,7 @@ BOOL Median(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel, LPRECT pRC, HWND hWndCall
 	ULONG lColor, lPixels, n;
 	LPBYTE pRGBArr;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)

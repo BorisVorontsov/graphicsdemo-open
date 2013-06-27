@@ -42,8 +42,8 @@ BOOL Blur_OCL(HDC hDC, ULONG lW, ULONG lH, ULONG lLevel)
 	//ѕытаемс€ создать среду исполнени€ на основе графического процессора
 	cl::Context cContext(CL_DEVICE_TYPE_GPU, cpContextProps, NULL, NULL, &intErr);
 	if (intErr != CL_SUCCESS) {
-		TCHAR lpMsg[255] = {0};
-		TCHAR lpPfName[128] = {0}, lpPfVendor[128] = {0};
+		TCHAR lpMsg[255] = {};
+		TCHAR lpPfName[128] = {}, lpPfVendor[128] = {};
 #ifdef UNICODE
 		MultiByteToWideChar(CP_ACP, 0, vPlatforms[0].getInfo<CL_PLATFORM_NAME>().c_str(), -1, lpPfName,
 			sizeof(lpPfName) / sizeof(TCHAR));

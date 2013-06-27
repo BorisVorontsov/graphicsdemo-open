@@ -18,7 +18,7 @@ BOOL GrayScale(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 	ULONG lColor, lR, lG, lB, lS;
 	LONG i, j;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)
@@ -108,7 +108,7 @@ BOOL GrayScale_Fast(HDC hDC, ULONG lW, ULONG lH, LPRECT pRC, HWND hWndCallback)
 	LPBITMAPINFO pBMI = NULL;
 	BYTE r, g, b, s;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)

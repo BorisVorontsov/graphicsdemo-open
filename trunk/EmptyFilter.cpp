@@ -11,7 +11,7 @@ BOOL EmptyFilter(HDC hDC, ULONG lW, ULONG lH, /*...дополнительные параметры..., 
 	ULONG lColor, lA, lR, lG, lB;
 	LONG i, j;
 
-	volatile ONPROGRESSPARAMS ONPP = {0};
+	volatile ONPROGRESSPARAMS ONPP = {};
 
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pBMI)) {
 		if (pPixels)

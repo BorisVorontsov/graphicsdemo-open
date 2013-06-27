@@ -17,7 +17,7 @@ class Median: public IAlgorithm
 {
 	ULONG mlLevel;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG x, x1, x2, x3;
 		LONG y, y1, y2, y3;
@@ -46,7 +46,7 @@ class Median: public IAlgorithm
 				{
 					for (y3 = y1; y3 <= y2; y3++)
 					{
-						lColor = GetPixel(pPixels, pBMI, x3, y3);
+						lColor = GetPixel(pPixels, pIMGDESCR, x3, y3);
 						pRGBArr[n] = R_BGRA(lColor);
 						(pRGBArr + lPixels)[n] = G_BGRA(lColor);
 						(pRGBArr + (lPixels << 1))[n] = B_BGRA(lColor);
@@ -59,7 +59,7 @@ class Median: public IAlgorithm
 				//¬от по этому фильтр и называетс€ медиана (серидина) -- беретс€ середина
 				//отсортированных массивов R/G/B
 				n = ((lPixels - 1) >> 1);
-				SetPixel(pPixels, pBMI, x, y, BGR((pRGBArr + (lPixels << 1))[n], (pRGBArr + lPixels)[n], pRGBArr[n]));
+				SetPixel(pPixels, pIMGDESCR, x, y, BGR((pRGBArr + (lPixels << 1))[n], (pRGBArr + lPixels)[n], pRGBArr[n]));
 				delete[] pRGBArr;
 				x++;
 			}

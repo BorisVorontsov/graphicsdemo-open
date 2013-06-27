@@ -23,7 +23,7 @@ class Shear: public IAlgorithm
 	LONG mlY; 
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LPBYTE pPixels2 = NULL;
 		LONG i, j, x, x1, y, y1, sx, sy;
@@ -39,7 +39,7 @@ class Shear: public IAlgorithm
 		{
 			for (i = pRC.left; i < pRC.right; i++)
 			{
-				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
+				SetPixel(pPixels, pIMGDESCR, i, j, mcrBkColor);
 			}
 		}
 
@@ -72,7 +72,7 @@ class Shear: public IAlgorithm
 				if ((x < pRC.left) || (x > (pRC.right - 1))) continue;
 				if ((y < pRC.top) || (y > (pRC.bottom - 1))) continue;
 
-				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
+				SetPixel(pPixels, pIMGDESCR, i, j, GetPixel(pPixels2, pIMGDESCR, x, y));
 			}
 
 			progressEvent(j, pRC.bottom);

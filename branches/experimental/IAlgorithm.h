@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Windows.h>
-#include <string>
-
 class IAlgorithm
 {
 	HWND mWndCallback;
@@ -16,9 +13,7 @@ class IAlgorithm
 	void (IAlgorithm::*Progress1)(int);
 	void (IAlgorithm::*Progress2)(int, int);
 protected:
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC) = 0;
-
-	
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC) = 0;
 
 	void progressEvent(int aPercent);
 	void progressEvent(int aCurrent, int aMax);

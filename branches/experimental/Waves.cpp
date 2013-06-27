@@ -31,7 +31,7 @@ class Waves: public IAlgorithm
 	LONG mlDirection;
 	COLORREF mcrBkColor;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG i, j, x, y;
 		LPBYTE pPixels2 = NULL;
@@ -48,7 +48,7 @@ class Waves: public IAlgorithm
 		{
 			for (i = pRC.left; i < pRC.right; i++)
 			{
-				SetPixel(pPixels, pBMI, i, j, mcrBkColor);
+				SetPixel(pPixels, pIMGDESCR, i, j, mcrBkColor);
 			}
 		}
 
@@ -74,7 +74,7 @@ class Waves: public IAlgorithm
 				if ((x < pRC.left) || (x > (pRC.right - 1))) continue;
 				if ((y < pRC.top) || (y > (pRC.bottom - 1))) continue;
 
-				SetPixel(pPixels, pBMI, i, j, GetPixel(pPixels2, pBMI, x, y));
+				SetPixel(pPixels, pIMGDESCR, i, j, GetPixel(pPixels2, pIMGDESCR, x, y));
 			}
 
 			progressEvent(j, pRC.bottom);

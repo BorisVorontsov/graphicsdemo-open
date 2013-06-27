@@ -13,14 +13,15 @@
 //	lH				Ширина DC/изображения
 //	ppPixels		Указатель на переменную, принимающую массив пикселей
 //	pBytesCnt		Указатель на переменную, принимающую размер (в байтах) массива
-//	ppBMI			Указатель на переменную, принимающую структуру BITMAPINFO, с информацией об изображении
-//ВАЖНО: массив ppPixels и структура ppBMI выделяются функцией посредством new, и вызывающий отвественнен за
-//освобождение ресурсов, посредством вызова delete[] для ppPixels и delete для ppBMI
+//	ppIMGDESCR		Указатель на переменную, принимающую структуру IMAGEDESCR, с информацией об изображении
+//ВАЖНО: массив ppPixels и структура ppIMGDESCR выделяются функцией посредством new, и вызывающий отвественнен за
+//освобождение ресурсов, посредством вызова delete[] для ppPixels и delete для ppIMGDESCR
 //Возвращаемое значение: количество полученных строк растра в случае успеха, 0 в случае ошибки
-int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesCnt, LPBITMAPINFO *ppBMI)
+int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesCnt, LPIMAGEDESCR *ppIMGDESCR)
 {
 	HDC hTmpDC;
 	HBITMAP hOldBitmap, hTmpBitmap;
+	BITMAPINFO BMI = {};
 	int intScanLines;
 
 	USHORT BPP = GetDeviceCaps(hDC, BITSPIXEL);
@@ -46,17 +47,21 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 	hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
 	BitBlt(hTmpDC, 0, 0, lW, lH, hDC, 0, 0, SRCCOPY);
 
-	*ppBMI = new BITMAPINFO;
-	ZeroMemory(*ppBMI, sizeof(BITMAPINFO));
+	BMI.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	BMI.bmiHeader.biWidth = lW;
+	BMI.bmiHeader.biHeight = lH;
+	BMI.bmiHeader.biPlanes = 1;
+	BMI.bmiHeader.biBitCount = BPP;
+	BMI.bmiHeader.biCompression = BI_RGB;
 
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biWidth = lW;
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biHeight = lH;
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biPlanes = 1;
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biBitCount = BPP;
-	((LPBITMAPINFO)*ppBMI)->bmiHeader.biCompression = BI_RGB;
+	intScanLines = GetDIBits(hTmpDC, hTmpBitmap, 0, lH, *ppPixels, &BMI, DIB_RGB_COLORS);
 
-	intScanLines = GetDIBits(hTmpDC, hTmpBitmap, 0, lH, *ppPixels, *ppBMI, DIB_RGB_COLORS);
+	*ppIMGDESCR = new IMAGEDESCR;
+	ZeroMemory(*ppIMGDESCR, sizeof(IMAGEDESCR));
+
+	((LPIMAGEDESCR)*ppIMGDESCR)->width = BMI.bmiHeader.biWidth;
+	((LPIMAGEDESCR)*ppIMGDESCR)->height = BMI.bmiHeader.biHeight;
+	((LPIMAGEDESCR)*ppIMGDESCR)->cBitCount = (char)BMI.bmiHeader.biBitCount;
 
 	SelectObject(hTmpDC, hOldBitmap);
 	DeleteObject(hTmpBitmap);
@@ -71,16 +76,23 @@ int GetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPBYTE *ppPixels, ULONG *pBytesC
 //	lW				Высота DC/изображения
 //	lH				Ширина DC/изображения
 //	pPixels			Массив пикселей
-//	pBMI			Указатель на структуру BITMAPINFO, с информацией об изображении
+//	pIMGDESCR		Указатель на структуру IMAGEDESCR, с информацией об изображении
 //Возвращаемое значение: количество примененных строк растра в случае успеха, 0 в случае ошибки
-int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPBITMAPINFO pBMI)
+int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPIMAGEDESCR pIMGDESCR)
 {
 	int intScanLines;
+	BITMAPINFO BMI = {};
 
-	if ((pBMI->bmiHeader.biBitCount != 24) && (pBMI->bmiHeader.biBitCount != 32)) return 0;
+	if ((pIMGDESCR->cBitCount != 24) && (pIMGDESCR->cBitCount != 32)) return 0;
 
-	intScanLines = StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, pBMI,
-		DIB_RGB_COLORS, SRCCOPY);
+	BMI.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	BMI.bmiHeader.biWidth = pIMGDESCR->width;
+	BMI.bmiHeader.biHeight = pIMGDESCR->height;
+	BMI.bmiHeader.biPlanes = 1;
+	BMI.bmiHeader.biBitCount = pIMGDESCR->cBitCount;
+	BMI.bmiHeader.biCompression = BI_RGB;
+
+	intScanLines = StretchDIBits(hDC, 0, 0, lW, lH, 0, 0, lW, lH, pPixels, &BMI, DIB_RGB_COLORS, SRCCOPY);
 
 	return intScanLines;
 }
@@ -88,21 +100,21 @@ int SetImagePixels(HDC hDC, ULONG lW, ULONG lH, LPCBYTE pPixels, LPBITMAPINFO pB
 //Внутренняя вспомогательная функция
 //Параметры:
 //	pPixels			Указатель на массив пикселей
-//	pBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
+//	pIMGDESCR		Указатель на структуру IMAGEDESCR, связанную с массивом пикселей
 //	x				x-координата пикселя
 //	y				y-координата пикселя
 //Возвращаемое значение: пиксель по заданным координатам в BGR[A] в случае успеха,
 //GP_INVALIDPIXEL в случае ошибки
-COLORREF GetPixel(LPCBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
+COLORREF GetPixel(LPCBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y)
 {
-	if ((x < 0) || (x >= pBMI->bmiHeader.biWidth)) return GP_INVALIDPIXEL;
-	if ((y < 0) || (y >= pBMI->bmiHeader.biHeight)) return GP_INVALIDPIXEL;
+	if ((x < 0) || (x >= pIMGDESCR->width)) return GP_INVALIDPIXEL;
+	if ((y < 0) || (y >= pIMGDESCR->height)) return GP_INVALIDPIXEL;
 
 	LPBYTE pPixel;
 	LONG lBPS, lDelta;
 	ULONG lResult = GP_INVALIDPIXEL;
-	lBPS = (pBMI->bmiHeader.biWidth * (pBMI->bmiHeader.biBitCount >> 3));
-	if (pBMI->bmiHeader.biHeight < 0)
+	lBPS = (pIMGDESCR->width * (pIMGDESCR->cBitCount >> 3));
+	if (pIMGDESCR->height < 0)
 	{
 		pPixel = (LPBYTE)pPixels;
 		lDelta = lBPS;
@@ -110,10 +122,10 @@ COLORREF GetPixel(LPCBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
 	else
 	{
 		lDelta = -lBPS;
-		pPixel = (LPBYTE)pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
+		pPixel = (LPBYTE)pPixels + (pIMGDESCR->height - 1) * lBPS;
 	}
 	pPixel += y * lDelta;
-	switch (pBMI->bmiHeader.biBitCount)
+	switch (pIMGDESCR->cBitCount)
 	{
 		case 24:
 			pPixel += x * 3;
@@ -130,20 +142,20 @@ COLORREF GetPixel(LPCBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y)
 //Внутренняя вспомогательная функция
 //Параметры:
 //	pPixels			Указатель на массив пикселей
-//	pBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
+//	pIMGDESCR		Указатель на структуру IMAGEDESCR, связанную с массивом пикселей
 //	x				x-координата пикселя
 //	y				y-координата пикселя
 //	crValue			Значение пикселя в BGR[A]
 //Функция не возвращает значений
-void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValue)
+void SetPixel(LPBYTE pPixels, LPIMAGEDESCR pIMGDESCR, LONG x, LONG y, COLORREF crValue)
 {
-	if ((x < 0) || (x >= pBMI->bmiHeader.biWidth)) return;
-	if ((y < 0) || (y >= pBMI->bmiHeader.biHeight)) return;
+	if ((x < 0) || (x >= pIMGDESCR->width)) return;
+	if ((y < 0) || (y >= pIMGDESCR->height)) return;
 
 	LPBYTE pPixel;
 	LONG lBPS, lDelta;
-	lBPS = (pBMI->bmiHeader.biWidth * (pBMI->bmiHeader.biBitCount >> 3));
-	if (pBMI->bmiHeader.biHeight < 0)
+	lBPS = (pIMGDESCR->width * (pIMGDESCR->cBitCount >> 3));
+	if (pIMGDESCR->height < 0)
 	{
 		pPixel = pPixels;
 		lDelta = lBPS;
@@ -151,10 +163,10 @@ void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValu
 	else
 	{
 		lDelta = -lBPS;
-		pPixel = pPixels + (pBMI->bmiHeader.biHeight - 1) * lBPS;
+		pPixel = pPixels + (pIMGDESCR->height - 1) * lBPS;
 	}
 	pPixel += y * lDelta;
-	switch (pBMI->bmiHeader.biBitCount)
+	switch (pIMGDESCR->cBitCount)
 	{
 		case 24:
 			((RGBTRIPLE *)pPixel)[x] = *((RGBTRIPLE *)&crValue);
@@ -168,28 +180,28 @@ void SetPixel(LPBYTE pPixels, LPBITMAPINFO pBMI, LONG x, LONG y, COLORREF crValu
 //Внутренняя вспомогательная функция
 //Параметры:
 //	pSrcPixels		Указатель на массив пикселей для масштабирования
-//	pSrcBMI			Указатель на структуру BITMAPINFO, связанную с массивом пикселей
+//	pSrcIMGDESCR	Указатель на структуру IMAGEDESCR, связанную с массивом пикселей
 //	ppDstPixels		Указатель на переменную, принимающую результирующий массив пикселей
-//	ppDstBMI		Указатель на переменную, принимающую указатель на структуру BITMAPINFO, описывающую результирующий массив пикселей
+//	ppDstIMGDESCR	Указатель на переменную, принимающую указатель на структуру IMAGEDESCR, описывающую результирующий массив пикселей
 //	lNewW			Новая шинира изображения
 //	lNewH			Новая высота изображения
-//ВАЖНО: массив ppDstPixels и структура ppDstBMI выделяются функцией посредством new, и вызывающий отвественнен за
-//освобождение ресурсов, посредством вызова delete[] для ppDstPixels и delete для ppDstBMI
+//ВАЖНО: массив ppDstPixels и структура pDstIMGDESCR выделяются функцией посредством new, и вызывающий отвественнен за
+//освобождение ресурсов, посредством вызова delete[] для ppDstPixels и delete для pDstIMGDESCR
 //Функция не возвращает значений
-void ResampleImagePixels(LPCBYTE pSrcPixels, LPBITMAPINFO pSrcBMI, LPBYTE *ppDstPixels, LPBITMAPINFO *ppDstBMI, ULONG lNewW, ULONG lNewH)
+void ResampleImagePixels(LPCBYTE pSrcPixels, LPIMAGEDESCR pSrcIMGDESCR, LPBYTE *ppDstPixels, LPIMAGEDESCR *pDstIMGDESCR, ULONG lNewW, ULONG lNewH)
 {
-	ULONG lNewSize = lNewW * lNewH * (pSrcBMI->bmiHeader.biBitCount >> 3);
+	ULONG lNewSize = lNewW * lNewH * (pSrcIMGDESCR->cBitCount >> 3);
 	*ppDstPixels = new BYTE[lNewSize];
 	memset(*ppDstPixels, 0, lNewSize);
 
-	*ppDstBMI = new BITMAPINFO;
-	memcpy(*ppDstBMI, pSrcBMI, sizeof(BITMAPINFO));
+	*pDstIMGDESCR = new IMAGEDESCR;
+	memcpy(*pDstIMGDESCR, pSrcIMGDESCR, sizeof(IMAGEDESCR));
 
-	((LPBITMAPINFO)*ppDstBMI)->bmiHeader.biWidth = lNewW;
-	((LPBITMAPINFO)*ppDstBMI)->bmiHeader.biHeight = lNewH;
+	((LPIMAGEDESCR)*pDstIMGDESCR)->width = lNewW;
+	((LPIMAGEDESCR)*pDstIMGDESCR)->height = lNewH;
 
-	ULONG lSrcW = pSrcBMI->bmiHeader.biWidth;
-	ULONG lSrcH = pSrcBMI->bmiHeader.biHeight;
+	ULONG lSrcW = pSrcIMGDESCR->width;
+	ULONG lSrcH = pSrcIMGDESCR->height;
 
 	double dblXR = (double)lSrcW / (double)lNewW;
 	double dblYR = (double)lSrcH / (double)lNewH;
@@ -203,7 +215,7 @@ void ResampleImagePixels(LPCBYTE pSrcPixels, LPBITMAPINFO pSrcBMI, LPBYTE *ppDst
 			lSrcPos = ULONG((floor(j * dblYR) * lSrcW) + floor(i * dblXR));
 			lDstPos = (j * lNewW) + i;
 
-			switch (pSrcBMI->bmiHeader.biBitCount)
+			switch (pSrcIMGDESCR->cBitCount)
 			{
 				case 24:
 					((RGBTRIPLE *)*ppDstPixels)[lDstPos] = ((RGBTRIPLE *)pSrcPixels)[lSrcPos];

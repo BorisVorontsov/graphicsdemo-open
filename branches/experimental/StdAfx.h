@@ -10,6 +10,7 @@
 #include <process.h>
 #include <stdio.h>
 #include <math.h>
+#include <string>
 
 #ifdef UNICODE
 

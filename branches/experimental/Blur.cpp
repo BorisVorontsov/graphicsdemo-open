@@ -22,7 +22,7 @@ class Blur: public IAlgorithm
 {
 	ULONG mLevel;
 
-	virtual void processImage(LPBITMAPINFO pBMI, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
+	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG x, x1, x2, x3;
 		LONG y, y1, y2, y3;
@@ -49,7 +49,7 @@ class Blur: public IAlgorithm
 				{
 					for (y3 = y1; y3 <= y2; y3++)
 					{
-						lColor = GetPixel(pPixels, pBMI, x3, y3);
+						lColor = GetPixel(pPixels, pIMGDESCR, x3, y3);
 						lR += R_BGRA(lColor);
 						lG += G_BGRA(lColor);
 						lB += B_BGRA(lColor);
@@ -59,7 +59,7 @@ class Blur: public IAlgorithm
 				lR /= lPixels;
 				lG /= lPixels;
 				lB /= lPixels;
-				SetPixel(pPixels, pBMI, x, y, BGR(lB, lG, lR));
+				SetPixel(pPixels, pIMGDESCR, x, y, BGR(lB, lG, lR));
 				x++;
 			}
 

@@ -65,7 +65,7 @@ public:
 		DoLoadImage(hBitmap, aLimit, aResultDims, hwnd, hdc);
 	}
 
-	virtual void LoadStandardmage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+	virtual void LoadStandardImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
 	{
 		// resources...
 		HBITMAP hBitmap = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_DEFAULTBITMAP), IMAGE_BITMAP, 0, 0, 0);

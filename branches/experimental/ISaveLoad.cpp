@@ -44,7 +44,7 @@ void ISaveLoad::reload(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc
 {
 	if( mPathToImage.empty() )
 	{
-		mImpl->LoadStandardmage(aLimit, aResultDims, hwnd, hdc);
+		mImpl->LoadStandardImage(aLimit, aResultDims, hwnd, hdc);
 	}
 	else
 	{

@@ -131,8 +131,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_MAINWND DIALOGEX 0, 0, 697, 484
-STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-EXSTYLE WS_EX_CLIENTEDGE | WS_EX_CONTROLPARENT
+STYLE DS_ABSALIGN | DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CAPTION | WS_VSCROLL | WS_HSCROLL | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_OVERLAPPEDWINDOW | WS_EX_CONTROLPARENT
 CAPTION "#"
 MENU IDR_MAINMENU
 CLASS "GraphicsDemo_WndClass"
@@ -161,9 +161,9 @@ BEGIN
     IDD_MAINWND, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 690
+        RIGHTMARGIN, 679
         TOPMARGIN, 7
-        BOTTOMMARGIN, 477
+        BOTTOMMARGIN, 467
     END
 
     IDD_PROGRESS, DIALOG
@@ -225,7 +225,7 @@ BEGIN
     BEGIN
         MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE
         MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS
-        MENUITEM "Reset",                       IDM_CLEAR
+        MENUITEM "Reset",                       IDM_RESET
     END
     MENUITEM "F&ilters",                    ID_FILTERS40025
     MENUITEM "&Transformation",             ID_TRANSFORMATION
@@ -247,7 +247,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON                ICON                    "Resources\\Icon\\GraphicsDemo_LOGO.ico"
+IDI_ICON                ICON                    "Resources\\Icon\\GD_ICON.ico"
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

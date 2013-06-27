@@ -101,7 +101,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			IPI.hWndPerfomanceInfo = CreateDialogParam(hAppInstance, MAKEINTRESOURCE(IDD_PERFORMANCEINFO), 
 				IPI.hWndMain, PerformanceWndProc, 0);
 
-			PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_CLEAR, 0), 0);
+			PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_RESET, 0), 0);
 			return TRUE;
 		case WM_ERASEBKGND:
 		{
@@ -118,7 +118,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				case IDM_FILE_LOADPICTURE:
 				{
 					if( ISaveLoad::getInstance().loadDlg(hWnd) )
-						PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_CLEAR, 0), 0);
+						PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_RESET, 0), 0);
 					break;
 				}
 				case IDM_FILE_SAVEPICTUREAS:
@@ -137,7 +137,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					CheckMenuItem(GetMenu(hWnd), ID_OPTIONS_PERFORMANCEMODE, MF_BYCOMMAND|tNewState);
 					break;
 				}
-				case IDM_CLEAR:
+				case IDM_RESET:
 				{
 					HDC hDC, hTmpDC;
 					HBITMAP hTmpBitmap, hOldBitmap;

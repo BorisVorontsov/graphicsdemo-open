@@ -628,9 +628,6 @@
     <ClInclude Include="Resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="GD_ICON.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="GraphicsDemo.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_x64|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -643,10 +640,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="bitmap1.bmp" />
-    <Image Include="bitmap2.bmp" />
-    <Image Include="resources\icon1.ico" />
-    <Image Include="Resources\Icon\GraphicsDemo_LOGO.ico" />
+    <Image Include="Resources\Icon\GD_ICON.ico" />
     <Image Include="Resources\Sample.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

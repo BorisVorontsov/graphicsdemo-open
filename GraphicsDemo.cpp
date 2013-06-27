@@ -334,48 +334,6 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 		tPtr->setPerfomanceMode( isPerfomanceMode );
 		tPtr->process(hDC, rcPicture, rcCanvas, IPI.hWndProgress);
 	}
-	else
-	{
-		switch (IPI.dwFltIndex)
-		{
-	/*#ifdef __USE_GDIPLUS__
-			case IDM_FILTERS_ALPHABLEND:
-			{
-				Graphics *pGraphics = NULL;
-				Image *pImage = new Image(lpPic2Path);
-				LONG lW = 0, lH = 0;
-				HDC hTmpDC;
-				HBITMAP hTmpBmp, hOldBmp;
-	
-				if (pImage->GetLastStatus() == Ok)
-				{
-					lW = pImage->GetWidth();
-					lH = pImage->GetHeight();
-
-					hTmpDC = CreateCompatibleDC(hDC);
-					hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
-					hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
-					pGraphics = new Graphics(hTmpDC);
-					pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
-
-					RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
-						(rcCanvas.bottom + (lH * 2)) >> 1};
-					AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
-
-					DeleteObject(SelectObject(hTmpDC, hOldBmp));
-					DeleteDC(hTmpDC);
-
-					delete pGraphics;
-				}
-				delete pImage;
-
-				break;
-			}
-	#endif*/
-			default:
-				break;
-		}
-	}
 	
 
 	if(isPerfomanceMode)

@@ -55,4 +55,4 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM3(L"Filters|RGB Balance", RGBBalance, -12, 4, -6);
+AUTO_REGISTER_ALGORITHM3(L"Фильтры|RGB Balance", RGBBalance, -12, 4, -6);

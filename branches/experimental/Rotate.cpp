@@ -34,7 +34,7 @@ class Rotate: public IAlgorithm
 
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
-		LPBYTE pPixels2 = NULL;
+		LPBYTE pPixels2 = nullptr;
 		LONG i, j, x, y;
 		double dblRad;
 		//LONG lX, lY;
@@ -99,12 +99,12 @@ public:
 	}
 };
 
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|+34°",  Rotate, 34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|+68°",  Rotate, 68, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|+102°",  Rotate, 102, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|+136°",  Rotate, 136, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|+34°",  Rotate, 34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|+68°",  Rotate, 68, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|+102°",  Rotate, 102, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|+136°",  Rotate, 136, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
 
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|-34°",  Rotate, -34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|-68°",  Rotate, -68, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|-102°",  Rotate, -102, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
-AUTO_REGISTER_ALGORITHM5( L"Transformation|Rotate|-136°",  Rotate, -136, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|-34°",  Rotate, -34, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|-68°",  Rotate, -68, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|-102°",  Rotate, -102, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );
+AUTO_REGISTER_ALGORITHM5( L"Трансформация|Rotate|-136°",  Rotate, -136, ROTATE_DIRECTION_CW, RGB(255, 255, 255), -1, -1 );

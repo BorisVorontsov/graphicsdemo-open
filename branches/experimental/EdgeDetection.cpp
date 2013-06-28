@@ -23,7 +23,7 @@ class EdgeDetection: public IAlgorithm
 
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
-		LPBYTE pPixels2 = NULL;
+		LPBYTE pPixels2 = nullptr;
 		ULONG lColor[9], lR, lG, lB;
 		LONG i, j, x, y;
 
@@ -77,4 +77,4 @@ public:
 	}
 };
 
-AUTO_REGISTER_ALGORITHM1( L"Filters|Edge Detection",  EdgeDetection, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Edge Detection",  EdgeDetection, RGB(255, 255, 255) );

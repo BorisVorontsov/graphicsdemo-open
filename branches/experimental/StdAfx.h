@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <string>
+#include <memory>
+#include <algorithm>
 
 #ifdef UNICODE
 

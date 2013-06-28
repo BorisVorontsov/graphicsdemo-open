@@ -10,7 +10,7 @@ namespace pattern
 	public:
 		static T& getInstance()
 		{
-			static T *volatile tInstancePtr = NULL;
+			static T *volatile tInstancePtr = nullptr;
 
 			if( !tInstancePtr )
 			{

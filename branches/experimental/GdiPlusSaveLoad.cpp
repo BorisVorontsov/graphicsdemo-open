@@ -9,24 +9,51 @@
 
 #include "resource.h"
 
-#include <memory>
-#include <algorithm>
-#include <string>
-
-namespace
+void ComRelease(IUnknown *pUnk)
 {
-	void ComRelease(IUnknown *aIntf)
-	{
-		if( aIntf )
-			aIntf->Release();
-	}
+	if( pUnk )
+		pUnk->Release();
 }
-
 
 class GdiPlusSaveLoad : public ISaveLoadImpl
 {
+private:
+	Image *m_pCurImage;
+
+	//Вспомогательная функция, для получения UID encoder'а по формату изображения
+	bool getEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid)
+	{
+	   UINT uNumOfEncs = 0;
+	   UINT uEncArrSize = 0;
+
+	   ImageCodecInfo* pImageCodecInfo = nullptr;
+	   GetImageEncodersSize(&uNumOfEncs, &uEncArrSize);
+
+	   if(uEncArrSize == 0)
+		  return false;
+
+	   pImageCodecInfo = (ImageCodecInfo*)new BYTE[uEncArrSize];
+	   if(pImageCodecInfo == nullptr)
+		  return false;
+
+	   GetImageEncoders(uNumOfEncs, uEncArrSize, pImageCodecInfo);
+
+	   for(UINT i = 0; i < uNumOfEncs; i++)
+	   {
+		  if(_tcscmp(pImageCodecInfo[i].MimeType, lpFmt) == 0)
+		  {
+			 *pClsid = pImageCodecInfo[i].Clsid;
+			 delete[] pImageCodecInfo;
+			 return true;
+		  }    
+	   }
+
+	   delete[] pImageCodecInfo;
+	   return false;
+	}
+
 public:
-	GdiPlusSaveLoad()
+	GdiPlusSaveLoad() : m_pCurImage(nullptr)
 	{
 		ULONG_PTR gdipToken;
 		GdiplusStartupInput gdipStartupInput;
@@ -35,192 +62,178 @@ public:
 
 	~GdiPlusSaveLoad()
 	{
+		if (m_pCurImage)
+			delete m_pCurImage;
 	}
 
+	//Отрисовка загруженного изображения
+	//Параметры:
+	//	hDC		DC для вывода
+	//Метод не возвращает значений
+	void drawImage(HDC hDC)
+	{
+		if (!m_pCurImage) return;
+
+		Graphics pGraphics(hDC);
+
+		if (m_pCurImage->GetLastStatus() == Ok)
+		{
+			Rect rcImage(0, 0, m_pCurImage->GetWidth(), m_pCurImage->GetHeight());
+			pGraphics.DrawImage(m_pCurImage, rcImage);
+		}
+	}
 
 	//Загрузка изображения посредством GDI+
 	//Парметры:
-	//	hWndCanvas		окно, для которого предназначено изображение. Функция автоматически изменит размер окна под размер изображения
-	//	hDCCanvas		DC, на котором будет отрисовано изображение. Если передать NULL, функция использует DC окна hWndCanvas
-	//	lpFileName		имя файла изображения
-	//Функция не возвращает значений
-	void DoLoadImage(Image &pImage, const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+	//	strPath		имя файла изображения
+	//Метод не возвращает значений
+	virtual void loadImageFromFile(const std::wstring &strPath)
 	{
-		LONG lW = 0, lH = 0;
+		if (m_pCurImage)
+			delete m_pCurImage;
 
-		HDC hDCCanvas1 = (hdc)?hdc:GetDC(hwnd);
-	
-		Graphics pGraphics(hDCCanvas1);
+		m_pCurImage = new Image(strPath.c_str());
+	}
 
-		if (pImage.GetLastStatus() == Ok)
+	//Загрузка демонстрационного изображения
+	virtual void loadStandardImage()
+	{
+
+		IStream *pStream = 0;
+
+		if( !SUCCEEDED(::CreateStreamOnHGlobal(0, TRUE, &pStream)) )
+			return;
+
+		std::unique_ptr<IStream, std::function<void(IUnknown *)>> upStream(pStream, ComRelease);
+
+		if( !SUCCEEDED(pStream->Write(get_Sample_jpg_buf(), get_Sample_jpg_size(), 0) ) )
+			return;
+
+		if (m_pCurImage)
+			delete m_pCurImage;
+
+		m_pCurImage = new Image(upStream.get());
+	}
+
+	virtual SIZE getImageDimensions()
+	{
+		SIZE sz = {};
+
+		if (m_pCurImage)
 		{
-			lW = pImage.GetWidth();
-			lH = pImage.GetHeight();
-			if (lW > aLimit.right) 
-				lW = aLimit.right;
-
-			if (lH > aLimit.bottom) 
-				lH = aLimit.bottom;
-		
-			aResultDims.left	= 0;
-			aResultDims.top		= 0;
-			aResultDims.right	= lW;
-			aResultDims.bottom	= lH;
-
-			if (hwnd)
-				SetWindowPos(hwnd, NULL, aLimit.left, aLimit.top, lW, lH, SWP_NOZORDER);
-
-			Rect rcImage(0, 0, aResultDims.right, aResultDims.bottom);
-			pGraphics.DrawImage(&pImage, rcImage);
+			sz.cx = m_pCurImage->GetWidth();
+			sz.cy = m_pCurImage->GetHeight();
 		}
 
-		if (!hdc)
-			ReleaseDC(hwnd, hDCCanvas1);
-	}
-
-	virtual void LoadImageFromFile(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc, const std::wstring &aPth)
-	{
-		Image pImage(aPth.c_str());
-	
-		DoLoadImage(pImage, aLimit, aResultDims, hwnd, hdc);
-	}
-
-	virtual void LoadStandardImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
-	{
-		// memory...
-		IStream *spStream = 0;
-
-		if( !SUCCEEDED(::CreateStreamOnHGlobal(0, TRUE, &spStream)) )
-			return;
-
-		std::unique_ptr<IStream, std::function<void(IUnknown *)>> tStream(spStream, ComRelease);
-
-		if( !SUCCEEDED(spStream->Write(get_Sample_jpg_buf(), get_Sample_jpg_size(), 0) ) )
-			return;
-		//
-
-		Image pImage(tStream.get());
-	
-		DoLoadImage(pImage, aLimit, aResultDims, hwnd, hdc);
-	}
-
-	std::wstring LoadRes(int id)
-	{
-		const int MaxString = 1024;
-		wchar_t tPtr[MaxString];
-		const int tLen = LoadString(GetModuleHandle(NULL), id, tPtr, MaxString);
-		if( tPtr && tLen > 0 )
-			return std::wstring(tPtr, tPtr + tLen);
-
-		return std::wstring();
+		return sz;
 	}
 
 	virtual std::wstring getLoadFilter()
 	{
-		return LoadRes(IDS_ODGDIPFILTER);
+		return loadResString(IDS_ODGDIPFILTER);
 	}
 
 	virtual std::wstring getSaveFilter()
 	{
-		return LoadRes(IDS_SDGDIPFILTER);
+		return loadResString(IDS_SDGDIPFILTER);
 	}
 
-	virtual void SavePictureToFile(HDC hDCCanvas, const RECT &aLimit, const std::wstring &aFile, int aFilterIdx)
+	virtual void saveImageToFile(HDC hDC, const std::wstring &strFile, int nFilterIdx)
 	{
-		std::wstring tFilePath = aFile;
-		std::wstring::size_type tPos = aFile.find_last_of(L".");
-		std::wstring tExt;
+		std::wstring strFilePath = strFile;
+		std::wstring::size_type nPos = strFile.find_last_of(L".");
+		std::wstring strExt;
 
-		if( tPos != std::string::npos )
-			tExt = aFile.substr(tPos);
+		if( nPos != std::string::npos )
+			strExt = strFile.substr(nPos);
 		
-		std::transform(tExt.begin(), tExt.end(), tExt.begin(), towlower);
+		std::transform(strExt.begin(), strExt.end(), strExt.begin(), towlower);
 
-		std::wstring tOldExt = tExt;
+		std::wstring strOldExt = strExt;
 
-		switch (aFilterIdx)
+		switch (nFilterIdx)
 		{
 			case 1: //BMP
-				if (tExt != L".bmp")
-					tExt = L".bmp";
+				if (strExt != L".bmp")
+					strExt = L".bmp";
 				break;
 
 			case 2: //JPEG
-				if (tExt != L".jpeg" && tExt != L".jpg")
-					tExt = L".jpg";
+				if (strExt != L".jpeg" && strExt != L".jpg")
+					strExt = L".jpg";
 				break;
 			case 3: //GIF
-				if (tExt != L".gif")
-					tExt = L".gif";
+				if (strExt != L".gif")
+					strExt = L".gif";
 				break;
 			case 4: //TIFF
-				if (tExt != L".tiff" && tExt != L".tif")
-					tExt = L".tif";
+				if (strExt != L".tiff" && strExt != L".tif")
+					strExt = L".tif";
 				break;
 			case 5: //PNG
-				if (tExt != L".png")
-					tExt = L".png";
+				if (strExt != L".png")
+					strExt = L".png";
 				break;
 		}
 
-		if( tOldExt != tExt )
-			tFilePath += tExt;
+		if( strOldExt != strExt )
+			strFilePath += strExt;
 
-		DoSavePicture(hDCCanvas, aLimit, tFilePath, tExt);
+		saveImage(hDC, strFilePath, strExt);
 	}
-
-
 
 	//Сохранение изображения посредством GDI+
 	//Параметры:
-	//	hDCCanvas		DC, с которого функция должна взять изображение
-	//	lpFileName		имя файла для сохранения изображения
-	//Функция не возвращает значений
-	void DoSavePicture(HDC hDCCanvas, const RECT &aLimit, const std::wstring &aFilePath, const std::wstring &aExt)
+	//	hDC				DC, с которого метод должен взять изображение
+	//	strFilePath		имя файла для сохранения изображения
+	//Метод не возвращает значений
+	void saveImage(HDC hDC, const std::wstring &strFilePath, const std::wstring &strExt)
 	{
-
 		HDC hCDC;
 		HBITMAP hTmpBitmap, hOldBitmap;
+		BITMAP BM = {};
 		Image *pImage;
 		CLSID EncClsid;
-		EncoderParameters *pEncParams = NULL;
+		EncoderParameters *pEncParams = nullptr;
 		ULONG uEncParamsSize;
-		//TCHAR lpExt[64] = {0};
 		LPTSTR lpFmt;
 
-		hCDC = CreateCompatibleDC(hDCCanvas);
-		hTmpBitmap = CreateCompatibleBitmap(hDCCanvas, aLimit.right - aLimit.left, aLimit.bottom - aLimit.top);
+		//Получаем информацию о текущем изображении
+		GetObject(GetCurrentObject(hDC, OBJ_BITMAP), sizeof(BITMAP), &BM);
+
+		hCDC = CreateCompatibleDC(hDC);
+		hTmpBitmap = CreateCompatibleBitmap(hDC, BM.bmWidth, BM.bmHeight);
 		hOldBitmap = (HBITMAP)SelectObject(hCDC, hTmpBitmap);
 
-		BitBlt(hCDC, 0, 0, aLimit.right - aLimit.left, aLimit.bottom - aLimit.top, hDCCanvas, 0, 0, SRCCOPY);
+		BitBlt(hCDC, 0, 0, BM.bmWidth, BM.bmHeight, hDC, 0, 0, SRCCOPY);
 		
-		pImage = Bitmap::FromHBITMAP(hTmpBitmap, NULL);
+		pImage = Bitmap::FromHBITMAP(hTmpBitmap, nullptr);
 
-		//SP_ExtractRightPart(lpFileName, lpExt, '.');
-
-		if ( aExt == L".bmp" )
+		if ( strExt == L".bmp" )
 			lpFmt = TEXT("image/bmp");
-		else if ( aExt == L".jpg" || aExt == L".jpeg" )
+		else if ( strExt == L".jpg" || strExt == L".jpeg" )
 			lpFmt = TEXT("image/jpeg");
-		else if ( aExt == L".gif" )
+		else if ( strExt == L".gif" )
 			lpFmt = TEXT("image/gif");
-		else if ( aExt == L".tif" || aExt == L".tiff" )
+		else if ( strExt == L".tif" || strExt == L".tiff" )
 			lpFmt = TEXT("image/tiff");
-		else if ( aExt == L".png" )
+		else if ( strExt == L".png" )
 			lpFmt = TEXT("image/png");
 		else
 			lpFmt = TEXT("image/bmp");
 
-		GetEncoderClsid(lpFmt, &EncClsid);
+		//Выбираем соответствующий формату кодек
+		getEncoderClsid(lpFmt, &EncClsid);
 
 		Bitmap TmpBmp(1, 1);
 		uEncParamsSize = TmpBmp.GetEncoderParameterListSize(&EncClsid);
 		if (uEncParamsSize)
 			pEncParams = (EncoderParameters*)new BYTE[uEncParamsSize];
 
-		if (aExt == L".jpg" || aExt == L".jpeg")
+		//Выставляем параметры сохранения для различных кодеков
+		if (strExt == L".jpg" || strExt == L".jpeg")
 		{
-			ULONG uEncQualLvl = 100;
+			ULONG uEncQualLvl = 100; //Качество сохранения JPEG
 
 			pEncParams->Count = 1;
 			pEncParams->Parameter[0].Guid = EncoderQuality;
@@ -228,9 +241,9 @@ public:
 			pEncParams->Parameter[0].NumberOfValues = 1;
 			pEncParams->Parameter[0].Value = &uEncQualLvl;
 		}
-		else if (aExt == L".tif" || aExt == L".tiff")
+		else if (strExt == L".tif" || strExt == L".tiff")
 		{
-			ULONG uCompression = EncoderValueCompressionLZW;
+			ULONG uCompression = EncoderValueCompressionLZW; //Алгоритм сжатия TIFF
 			ULONG uColorDepth = 32;
 
 			pEncParams->Count = 2;
@@ -250,7 +263,7 @@ public:
 				pEncParams->Count = 0;
 		}
 
-		pImage->Save(aFilePath.c_str(), &EncClsid, pEncParams);
+		pImage->Save(strFilePath.c_str(), &EncClsid, pEncParams);
 
 		DeleteObject(SelectObject(hCDC, hOldBitmap));
 		DeleteDC(hCDC);
@@ -259,39 +272,6 @@ public:
 			delete[] pEncParams;
 		delete pImage;
 	} 
-	
-
-	//Вспомогательная функция, для получения UID encoder'а по формату изображения
-	bool GetEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid)
-	{
-	   UINT uNumOfEncs = 0;
-	   UINT uEncArrSize = 0;
-
-	   ImageCodecInfo* pImageCodecInfo = NULL;
-	   GetImageEncodersSize(&uNumOfEncs, &uEncArrSize);
-
-	   if(uEncArrSize == 0)
-		  return false;
-
-	   pImageCodecInfo = (ImageCodecInfo*)new BYTE[uEncArrSize];
-	   if(pImageCodecInfo == NULL)
-		  return false;
-
-	   GetImageEncoders(uNumOfEncs, uEncArrSize, pImageCodecInfo);
-
-	   for(UINT i = 0; i < uNumOfEncs; i++)
-	   {
-		  if(_tcscmp(pImageCodecInfo[i].MimeType, lpFmt) == 0)
-		  {
-			 *pClsid = pImageCodecInfo[i].Clsid;
-			 delete[] pImageCodecInfo;
-			 return true;
-		  }    
-	   }
-
-	   delete[] pImageCodecInfo;
-	   return false;
-	}
 
 };
 

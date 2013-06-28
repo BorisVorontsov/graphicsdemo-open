@@ -21,6 +21,153 @@ LANGUAGE LANG_RUSSIAN, SUBLANG_NEUTRAL
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Dialog
+//
+
+IDD_PERFORMANCEINFO DIALOGEX 0, 0, 179, 26
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "Microsoft Sans Serif", 700, 0, 0xCC
+BEGIN
+    LTEXT           "The is no progress in performance mode",IDC_STATIC,23,9,133,8
+END
+
+IDD_MAINWND DIALOGEX 0, 0, 697, 484
+STYLE DS_ABSALIGN | DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CAPTION | WS_VSCROLL | WS_HSCROLL | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_OVERLAPPEDWINDOW | WS_EX_CONTROLPARENT
+CAPTION "#"
+MENU IDR_MAINMENU
+CLASS "GraphicsDemo_WndClass"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "",IDC_STCCANVAS,6,6,258,258
+END
+
+IDD_PROGRESS DIALOGEX 0, 0, 205, 25
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Progress1",IDC_PGBEP,"msctls_progress32",WS_BORDER,5,9,195,7
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_PERFORMANCEINFO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 172
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 19
+    END
+
+    IDD_MAINWND, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 679
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 467
+    END
+
+    IDD_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 198
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 18
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_DEFAULTBITMAP       BITMAP                  "Resources\\Sample.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,0,0,42
+ PRODUCTVERSION 2,0,0,42
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "001904b0"
+        BEGIN
+            VALUE "CompanyName", "Boris Vorontsov/BV"
+            VALUE "FileDescription", "Graphics Demo"
+            VALUE "FileVersion", "2.0.0.42"
+            VALUE "LegalCopyright", "Авторские права © 2007 - 2013 BV и участники проекта"
+            VALUE "OriginalFilename", "GraphicsDemo.exe"
+            VALUE "ProductVersion", "2.0.0.42"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x19, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINMENU MENU
+BEGIN
+    POPUP "&Файл"
+    BEGIN
+        MENUITEM "&Загрузить Изображение...",   IDM_FILE_LOADPICTURE
+        MENUITEM "&Сохранить Как...",           IDM_FILE_SAVEPICTUREAS
+        MENUITEM "С&бросить",                   IDM_RESET
+    END
+    MENUITEM "Ф&ильтры",                    65535
+    MENUITEM "&Трансформация",              ID_TRANSFORMATION
+    POPUP "&Параметры"
+    BEGIN
+        MENUITEM "&Тест Производительности",    ID_OPTIONS_PERFORMANCEMODE
+    END
+    POPUP "&Справка"
+    BEGIN
+        MENUITEM "&О Программе",                IDM_HELP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "Resources\\Icon\\GD_ICON.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 
@@ -74,181 +221,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_PERFORMANCEINFO DIALOGEX 0, 0, 179, 26
-STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "Microsoft Sans Serif", 700, 0, 0xCC
-BEGIN
-    LTEXT           "The is no progress in performance mode",IDC_STATIC,23,9,133,8
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_PERFORMANCEINFO, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 172
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 19
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_DEFAULTBITMAP       BITMAP                  "Resources\\Sample.bmp"
 #endif    // Russian (Russia) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_MAINWND DIALOGEX 0, 0, 697, 484
-STYLE DS_ABSALIGN | DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE | WS_CAPTION | WS_VSCROLL | WS_HSCROLL | WS_SYSMENU | WS_THICKFRAME
-EXSTYLE WS_EX_OVERLAPPEDWINDOW | WS_EX_CONTROLPARENT
-CAPTION "#"
-MENU IDR_MAINMENU
-CLASS "GraphicsDemo_WndClass"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
-BEGIN
-    LTEXT           "",IDC_STCCANVAS,6,6,258,258
-END
-
-IDD_PROGRESS DIALOGEX 0, 0, 205, 25
-STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Sans Serif", 0, 0, 0x1
-BEGIN
-    CONTROL         "Progress1",IDC_PGBEP,"msctls_progress32",WS_BORDER,5,9,195,7
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_MAINWND, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 679
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 467
-    END
-
-    IDD_PROGRESS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 198
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 18
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,42
- PRODUCTVERSION 2,0,0,42
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "CompanyName", "Boris Vorontsov/BV"
-            VALUE "FileDescription", "Graphics Demo"
-            VALUE "FileVersion", "2.0.0.42"
-            VALUE "LegalCopyright", "Copyright © 2007 - 2013 BV ? ????????? ???????"
-            VALUE "OriginalFilename", "GraphicsDemo.exe"
-            VALUE "ProductVersion", "2.0.0.42"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Menu
-//
-
-IDR_MAINMENU MENU
-BEGIN
-    POPUP "&File"
-    BEGIN
-        MENUITEM "&Load Picture...",            IDM_FILE_LOADPICTURE
-        MENUITEM "&Save Picture As...",         IDM_FILE_SAVEPICTUREAS
-        MENUITEM "Reset",                       IDM_RESET
-    END
-    MENUITEM "F&ilters",                    ID_FILTERS40025
-    MENUITEM "&Transformation",             ID_TRANSFORMATION
-    POPUP "Options"
-    BEGIN
-        MENUITEM "Performance mode",            ID_OPTIONS_PERFORMANCEMODE
-    END
-    POPUP "&Help"
-    BEGIN
-        MENUITEM "&About",                      IDM_HELP_ABOUT
-    END
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICON                ICON                    "Resources\\Icon\\GD_ICON.ico"
-#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

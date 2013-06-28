@@ -5,6 +5,11 @@
 //Шаблон для новых фильтров
 
 
+//*** TODO: ***
+//Упростить аргументную часть, pPixels и lBytesCnt интегрировать в IMAGEDESCR, последний выполнить классом class GDImage (просто Image будет конфликтовать с классом GDI+)
+//GDImage сам выделяет пиксельный буфер и хранит всю информацию о растре: битность, размеры, (палитра)
+//Пользователь класса работает с геттером/перегрузкой [] для чтения и установки значений пикселей
+
 class EmptyFilter: public IAlgorithm
 {
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, LPRECT pRC)

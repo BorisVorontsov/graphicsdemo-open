@@ -42,10 +42,10 @@ class Blur_OCL: public IAlgorithm
 			{CL_CONTEXT_PLATFORM, (cl_context_properties)(vPlatforms[0])(), 0};
 
 		//Пытаемся создать среду исполнения на основе графического процессора
-		cl::Context cContext(CL_DEVICE_TYPE_GPU, cpContextProps, NULL, NULL, &intErr);
+		cl::Context cContext(CL_DEVICE_TYPE_GPU, cpContextProps, nullptr, nullptr, &intErr);
 		if (intErr != CL_SUCCESS) {
-			TCHAR lpMsg[255] = {0};
-			TCHAR lpPfName[128] = {0}, lpPfVendor[128] = {0};
+			TCHAR lpMsg[255] = {};
+			TCHAR lpPfName[128] = {}, lpPfVendor[128] = {};
 	#ifdef UNICODE
 			MultiByteToWideChar(CP_ACP, 0, vPlatforms[0].getInfo<CL_PLATFORM_NAME>().c_str(), -1, lpPfName,
 				sizeof(lpPfName) / sizeof(TCHAR));
@@ -61,7 +61,7 @@ class Blur_OCL: public IAlgorithm
 		}
 
 		strExePath.resize(MAX_PATH, '\0');
-		GetModuleFileNameA(NULL, (LPSTR)strExePath.c_str(), (DWORD)strExePath.size());
+		GetModuleFileNameA(nullptr, (LPSTR)strExePath.c_str(), (DWORD)strExePath.size());
 		strExePath.resize(strExePath.rfind('\\') + 1);
 
 		strSrcPath = strExePath;
@@ -83,16 +83,16 @@ class Blur_OCL: public IAlgorithm
 			if (pProgram.build(vDevices) == CL_SUCCESS)
 			{
 				//Создаем нашу функцию OpenCL (__kernel void Blur)
-				cl::Kernel kKernelBlur(pProgram, "Blur", NULL);
+				cl::Kernel kKernelBlur(pProgram, "Blur", nullptr);
 
 				//Выделяем память под входной буфер
-				cl::Buffer bInputImageBuffer = cl::Buffer(cContext, CL_MEM_READ_ONLY, lBytesCnt, NULL, NULL);
+				cl::Buffer bInputImageBuffer = cl::Buffer(cContext, CL_MEM_READ_ONLY, lBytesCnt, nullptr, nullptr);
 
 				//Аналогично, под буфер для результата
-				cl::Buffer bOutputImageBuffer = cl::Buffer(cContext, CL_MEM_WRITE_ONLY, lBytesCnt, NULL, NULL);
+				cl::Buffer bOutputImageBuffer = cl::Buffer(cContext, CL_MEM_WRITE_ONLY, lBytesCnt, nullptr, nullptr);
 
 				//Создаем очередь
-				cl::CommandQueue cqQueue(cContext, vDevices[0], 0, NULL);
+				cl::CommandQueue cqQueue(cContext, vDevices[0], 0, nullptr);
 
 				//Записываем растр во входной буфер
 				cqQueue.enqueueWriteBuffer(bInputImageBuffer, 1, 0, lBytesCnt, pPixels, 0, 0);
@@ -116,7 +116,7 @@ class Blur_OCL: public IAlgorithm
 				cl::NDRange ndrGlobalThreads(szGlobalThreads);
 
 				//На всякий случай проверяем, поддерживает ли GPU заданое нами количество потоков
-				size_t szKernelWGSize = kKernelBlur.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(vDevices[0], NULL);
+				size_t szKernelWGSize = kKernelBlur.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(vDevices[0], nullptr);
 				if (szLocalThreads > szKernelWGSize)
 					szLocalThreads = szKernelWGSize;
 				cl::NDRange ndrLocalThreads(szLocalThreads);
@@ -146,8 +146,8 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur (OpenCL)|8px",  Blur_OCL, 8);
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur (OpenCL)|16px",  Blur_OCL, 16);
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur (OpenCL)|24px",  Blur_OCL, 24);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur (OpenCL)|8px",  Blur_OCL, 8);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur (OpenCL)|16px",  Blur_OCL, 16);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur (OpenCL)|24px",  Blur_OCL, 24);
 
 #endif

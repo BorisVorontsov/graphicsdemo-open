@@ -34,7 +34,7 @@ class Waves: public IAlgorithm
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
 		LONG i, j, x, y;
-		LPBYTE pPixels2 = NULL;
+		LPBYTE pPixels2 = nullptr;
 		double dblFunc;
 
 		pPixels2 = new BYTE[lBytesCnt];
@@ -92,10 +92,10 @@ public:
 
 //6, 48, WAVES_DIRECTION_WE, RGB(255, 255, 255)
 
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Horizontal(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Horizontal(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Horizontal(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Horizontal(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_NS, RGB(255, 255, 255) );
 
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM4( L"Transformation|Waves|Vertical(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Vertical(3, 24)",	Waves, 3,	24, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Vertical(6, 48)",	Waves, 6,	48, WAVES_DIRECTION_WE, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM4( L"Трансформация|Waves|Vertical(12, 96)",	Waves, 12,	96, WAVES_DIRECTION_WE, RGB(255, 255, 255) );

@@ -25,7 +25,7 @@ class Shear: public IAlgorithm
 
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC)
 	{
-		LPBYTE pPixels2 = NULL;
+		LPBYTE pPixels2 = nullptr;
 		LONG i, j, x, x1, y, y1, sx, sy;
 
 		pPixels2 = new BYTE[lBytesCnt];
@@ -86,6 +86,6 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM3( L"Transformation|Shear|x: -24, y: +24",  Shear, -24, 24, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM3( L"Transformation|Shear|x: -48, y: +48",  Shear, -48, 48, RGB(255, 255, 255) );
-AUTO_REGISTER_ALGORITHM3( L"Transformation|Shear|x: -96, y: +96",  Shear, -96, 96, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM3( L"Трансформация|Shear|x: -24, y: +24",  Shear, -24, 24, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM3( L"Трансформация|Shear|x: -48, y: +48",  Shear, -48, 48, RGB(255, 255, 255) );
+AUTO_REGISTER_ALGORITHM3( L"Трансформация|Shear|x: -96, y: +96",  Shear, -96, 96, RGB(255, 255, 255) );

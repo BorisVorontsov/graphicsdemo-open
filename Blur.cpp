@@ -74,7 +74,7 @@ public:
 	}
 };
 
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur|8px",  Blur, 8);
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur|16px",  Blur, 16);
-AUTO_REGISTER_ALGORITHM1( L"Filters|Blur|24px",  Blur, 24);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur|8px",  Blur, 8);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur|16px",  Blur, 16);
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Blur|24px",  Blur, 24);
 

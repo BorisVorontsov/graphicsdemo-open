@@ -116,6 +116,6 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM( L"Filters|GrayScale|Slow",  GrayScale );
-AUTO_REGISTER_ALGORITHM( L"Filters|GrayScale|Fast",  GrayScaleFast );
+AUTO_REGISTER_ALGORITHM( L"Фильтры|GrayScale|Slow",  GrayScale );
+AUTO_REGISTER_ALGORITHM( L"Фильтры|GrayScale|Fast",  GrayScaleFast );
 

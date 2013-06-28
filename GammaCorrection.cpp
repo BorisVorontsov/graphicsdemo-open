@@ -52,8 +52,8 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|0.1",  GammaCorrection, 0.1 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|0.5",  GammaCorrection, 0.5 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.0",  GammaCorrection, 1.0 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.5",  GammaCorrection, 1.5 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Gamma Correction|1.9",  GammaCorrection, 1.9 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Gamma Correction|0.1",  GammaCorrection, 0.1 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Gamma Correction|0.5",  GammaCorrection, 0.5 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Gamma Correction|1.0",  GammaCorrection, 1.0 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Gamma Correction|1.5",  GammaCorrection, 1.5 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Gamma Correction|1.9",  GammaCorrection, 1.9 );

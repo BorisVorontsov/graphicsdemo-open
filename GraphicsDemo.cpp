@@ -22,20 +22,20 @@
 
 static HINSTANCE hAppInstance;
 
-static volatile SYSTEM_INFO SI = {0};
+static volatile SYSTEM_INFO SI = {};
 
 static LPCTSTR lpGDWndClass = TEXT("GraphicsDemo_WndClass");
 static HWND hMainWnd;
 
 static LONG_PTR pOldCanvasProc;
 
-static HDC hDBDC = NULL;
+static HDC hDBDC = nullptr;
 static HBITMAP hDBBitmap, hOldDBBitmap;
 
 static volatile HANDLE hImgProcThread;
 static UINT uImgProcThreadID;
 
-static IMGPROCINFO IPI = {0};
+static IMGPROCINFO IPI = {};
 
 void FillMenu(HWND hWnd);
 
@@ -44,7 +44,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 					   LPTSTR lpCmdLine,
 					   int nCmdShow)
 {
-	WNDCLASSEX wcex = {0};
+	WNDCLASSEX wcex = {};
 	MSG msg;
 
 	hAppInstance = hInstance;
@@ -66,10 +66,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	RegisterClassEx(&wcex);
 
-	hMainWnd = CreateDialogParam(hAppInstance, MAKEINTRESOURCE(IDD_MAINWND), NULL,
+	hMainWnd = CreateDialogParam(hAppInstance, MAKEINTRESOURCE(IDD_MAINWND), nullptr,
 		MainWndProc, 0);
 
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (GetMessage(&msg, nullptr, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -105,7 +105,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		case WM_ERASEBKGND:
 		{
-			RECT rcClient = {0};
+			RECT rcClient = {};
 			HDC hDC = (HDC)wParam;
 			GetClientRect(hWnd, &rcClient);
 			FillRect(hDC, &rcClient, (HBRUSH)GetStockObject(BLACK_BRUSH));
@@ -117,18 +117,33 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				case IDM_FILE_LOADPICTURE:
 				{
-					if( ISaveLoad::getInstance().loadDlg(hWnd) )
-						PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDM_RESET, 0), 0);
+					HDC hDC, hTmpDC;
+					HBITMAP hTmpBitmap, hOldBitmap;
+					RECT rcCanvas;
+					
+					hDC = GetDC(hWnd);
+					hTmpDC = CreateCompatibleDC(hDC);
+					hTmpBitmap = CreateCompatibleBitmap(hDC, ISaveLoad::getInstance().imageWidth(), ISaveLoad::getInstance().imageHeight());
+					hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
+					
+					if (ISaveLoad::getInstance().loadDlg(hWnd, hTmpDC))
+					{
+						SetRect(&rcCanvas, 0, 0, ISaveLoad::getInstance().imageWidth(), ISaveLoad::getInstance().imageHeight());
+
+						SetWindowPos(GetDlgItem(hWnd, IDC_STCCANVAS), nullptr, GD_MIN_CANV_LEFT, GD_MIN_CANV_TOP, rcCanvas.right, rcCanvas.bottom, SWP_NOZORDER);
+						BitBlt(hDBDC, 0, 0, rcCanvas.right, rcCanvas.bottom, hTmpDC, 0, 0, SRCCOPY);
+						RedrawWindow(GetDlgItem(hWnd, IDC_STCCANVAS), nullptr, nullptr, RDW_NOERASE | RDW_INVALIDATE);
+					}
+					
+					DeleteObject(SelectObject(hTmpDC, hOldBitmap));
+					DeleteDC(hTmpDC);
+					ReleaseDC(hWnd, hDC);
+
 					break;
 				}
 				case IDM_FILE_SAVEPICTUREAS:
 				{
-					RECT tCanvLimit;
-					tCanvLimit.top = 0;
-					tCanvLimit.left = 0;
-					tCanvLimit.right = GD_MAX_CANV_WIDTH;
-					tCanvLimit.bottom = GD_MAX_CANV_HEIGHT;
-					ISaveLoad::getInstance().savePicture(hWnd, hDBDC, tCanvLimit);
+					ISaveLoad::getInstance().saveDlg(hWnd, hDBDC);
 					break;
 				}
 				case ID_OPTIONS_PERFORMANCEMODE:
@@ -145,19 +160,17 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					
 					hDC = GetDC(hWnd);
 					hTmpDC = CreateCompatibleDC(hDC);
-					hTmpBitmap = CreateCompatibleBitmap(hDC, GD_MAX_CANV_WIDTH, GD_MAX_CANV_HEIGHT);
+					hTmpBitmap = CreateCompatibleBitmap(hDC, ISaveLoad::getInstance().imageWidth(), ISaveLoad::getInstance().imageHeight());
 					hOldBitmap = (HBITMAP)SelectObject(hTmpDC, hTmpBitmap);
 					
-					RECT tLimits;
-					tLimits.top		= GD_MIN_CANV_TOP;
-					tLimits.left	= GD_MIN_CANV_LEFT;
-					tLimits.right	= GD_MAX_CANV_WIDTH;
-					tLimits.bottom	= GD_MAX_CANV_HEIGHT;
-					ISaveLoad::getInstance().reload(tLimits, IPI.rcPicture, GetDlgItem(hWnd, IDC_STCCANVAS), hTmpDC);
-					
-					GetClientRect(GetDlgItem(hWnd, IDC_STCCANVAS), &rcCanvas);
+					ISaveLoad::getInstance().reload(hTmpDC);
+
+					SetRect(&rcCanvas, 0, 0, ISaveLoad::getInstance().imageWidth(), ISaveLoad::getInstance().imageHeight());
+
+					SetWindowPos(GetDlgItem(hWnd, IDC_STCCANVAS), nullptr, GD_MIN_CANV_LEFT, GD_MIN_CANV_TOP, rcCanvas.right, rcCanvas.bottom, SWP_NOZORDER);
+
 					BitBlt(hDBDC, 0, 0, rcCanvas.right, rcCanvas.bottom, hTmpDC, 0, 0, SRCCOPY);
-					RedrawWindow(GetDlgItem(hWnd, IDC_STCCANVAS), NULL, NULL, RDW_NOERASE | RDW_INVALIDATE);
+					RedrawWindow(GetDlgItem(hWnd, IDC_STCCANVAS), nullptr, nullptr, RDW_NOERASE | RDW_INVALIDATE);
 					
 					DeleteObject(SelectObject(hTmpDC, hOldBitmap));
 					DeleteDC(hTmpDC);
@@ -166,14 +179,14 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				case IDM_HELP_ABOUT:
 				{
-					TCHAR lpAboutString[256] = {0};
+					TCHAR lpAboutString[256] = {};
 					TCHAR lpTmp[128];
 					LoadString(hAppInstance, IDS_ABOUTSTRING1, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
 					_stprintf(lpAboutString, lpTmp, APP_NAME);
 					LoadString(hAppInstance, IDS_ABOUTSTRING2, lpTmp, sizeof(lpTmp) / sizeof(TCHAR));
 					_tcscat(lpAboutString, lpTmp);
 					
-					MSGBOXPARAMS MBP = {0};
+					MSGBOXPARAMS MBP = {};
 					MBP.cbSize = sizeof(MBP);
 					MBP.hInstance = hAppInstance;
 					MBP.dwStyle = MB_USERICON | MB_OK;
@@ -190,7 +203,7 @@ INT_PTR CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					{
 						IPI.hDBDC = hDBDC;
 						IPI.dwFltIndex = LOWORD(wParam);
-						hImgProcThread = (HANDLE)_beginthreadex(NULL, 0, &ImgProcThreadMain,
+						hImgProcThread = (HANDLE)_beginthreadex(nullptr, 0, &ImgProcThreadMain,
 							hWnd, 0, &uImgProcThreadID);
 					}
 					break;
@@ -278,8 +291,8 @@ INT_PTR CALLBACK ProgressWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				case EVENT_ON_PROGRESS:
 				{
 					//LPONPROGRESSPARAMS pONPP = (LPONPROGRESSPARAMS)lParam;
-					int tPercent = (int)lParam;
-					SendDlgItemMessage(hWnd, IDC_PGBEP, PBM_SETPOS, tPercent, 0);
+					int nPercent = (int)lParam;
+					SendDlgItemMessage(hWnd, IDC_PGBEP, PBM_SETPOS, nPercent, 0);
 					break;
 				}
 				default:
@@ -321,7 +334,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 
 	LARGE_INTEGER intFreq, intStart, intEnd;
-	TCHAR lpResult[128] = {0};
+	TCHAR lpResult[128] = {};
 	if(isPerfomanceMode)
 	{
 		QueryPerformanceFrequency(&intFreq);
@@ -333,6 +346,48 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 	{
 		tPtr->setPerfomanceMode( isPerfomanceMode );
 		tPtr->process(hDC, rcPicture, rcCanvas, IPI.hWndProgress);
+	}
+	else
+	{
+		switch (IPI.dwFltIndex)
+		{
+	/*#ifdef __USE_GDIPLUS__
+			case IDM_FILTERS_ALPHABLEND:
+			{
+				Graphics *pGraphics = nullptr;
+				Image *pImage = new Image(lpPic2Path);
+				LONG lW = 0, lH = 0;
+				HDC hTmpDC;
+				HBITMAP hTmpBmp, hOldBmp;
+	
+				if (pImage->GetLastStatus() == Ok)
+				{
+					lW = pImage->GetWidth();
+					lH = pImage->GetHeight();
+
+					hTmpDC = CreateCompatibleDC(hDC);
+					hTmpBmp = CreateCompatibleBitmap(hDC, lW, lH);
+					hOldBmp = (HBITMAP)SelectObject(hTmpDC, hTmpBmp);
+					pGraphics = new Graphics(hTmpDC);
+					pGraphics->DrawImage(pImage, Rect(0, 0, lW, lH));
+
+					RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
+						(rcCanvas.bottom + (lH * 2)) >> 1};
+					AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
+
+					DeleteObject(SelectObject(hTmpDC, hOldBmp));
+					DeleteDC(hTmpDC);
+
+					delete pGraphics;
+				}
+				delete pImage;
+
+				break;
+			}
+	#endif*/
+			default:
+				break;
+		}
 	}
 	
 
@@ -347,7 +402,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 		ShowWindow(IPI.hWndPerfomanceInfo, SW_HIDE);
 
 	if (IPI.hDBDC)
-		RedrawWindow(IPI.hWndCanvas, NULL, NULL, RDW_NOERASE | RDW_INVALIDATE);
+		RedrawWindow(IPI.hWndCanvas, nullptr, nullptr, RDW_NOERASE | RDW_INVALIDATE);
 
 	if (!IPI.hDBDC)
 		ReleaseDC(IPI.hWndCanvas, hDC);
@@ -356,10 +411,10 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 	{
 		_stprintf(lpResult, TEXT("Время фильтра: %.02f сек."), (double)(intEnd.QuadPart - intStart.QuadPart) /
 		(double)intFreq.QuadPart);
-		MessageBox(NULL, lpResult, TEXT("Результат выполнения"), MB_ICONINFORMATION);
+		MessageBox(nullptr, lpResult, TEXT("Результат выполнения"), MB_ICONINFORMATION);
 	}
 
-	hImgProcThread = NULL;
+	hImgProcThread = nullptr;
 	return 0;
 }
 
@@ -457,7 +512,7 @@ HMENU CreateMenuSequence(HMENU aMenuRoot, const AlgorithmFactory::MenuSequence &
 		//else
 		//{
 			// found!
-		MENUITEMINFO tInfo = {0};
+		MENUITEMINFO tInfo = {};
 		tInfo.cbSize = sizeof(MENUITEMINFO);
 		tInfo.fMask |= MIIM_SUBMENU;
 		BOOL tRes = GetMenuItemInfo(tMenu, tSubMenu, TRUE, &tInfo);

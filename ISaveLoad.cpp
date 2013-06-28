@@ -7,6 +7,18 @@ ISaveLoadImpl::~ISaveLoadImpl()
 {
 }
 
+std::wstring ISaveLoadImpl::loadResString(int id)
+{
+	const int MaxString = 1024;
+
+	wchar_t pPtr[MaxString];
+	const int intLen = LoadString(GetModuleHandle(nullptr), id, pPtr, MaxString);
+	if( pPtr && intLen > 0 )
+		return std::wstring(pPtr, pPtr + intLen);
+
+	return std::wstring();
+}
+
 //////////////////////////////////////////////////
 
 SIZE_T GetOpenDialog(HINSTANCE hInstance,
@@ -26,80 +38,117 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 					LPCTSTR lpFilter,
 					LPDWORD pFilterIndex,
 					LPCTSTR lpDefExt,
-					LPCTSTR lpInitialDir = NULL);
+					LPCTSTR lpInitialDir = nullptr);
 //////////////////////////////////////////////////
 
 ISaveLoad::ISaveLoad()
-	:mImpl( ISaveLoadImpl::create() )
+	:m_pImpl( ISaveLoadImpl::create() )
 {
 }
 
 
 ISaveLoad::~ISaveLoad()
 {
-	delete mImpl;
+	delete m_pImpl;
 }
 
-void ISaveLoad::reload(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+void ISaveLoad::reload(HDC hDC)
 {
-	if( mPathToImage.empty() )
+	if( m_strPathToImage.empty() )
 	{
-		mImpl->LoadStandardImage(aLimit, aResultDims, hwnd, hdc);
+		m_pImpl->loadStandardImage();
 	}
 	else
 	{
-		mImpl->LoadImageFromFile(aLimit, aResultDims, hwnd, hdc, mPathToImage);
+		m_pImpl->loadImageFromFile(m_strPathToImage);
 	}
+
+	m_pImpl->drawImage(hDC);
 }
 
-bool ISaveLoad::loadDlg(HWND hwnd)
+//Метод загружает изображение в форму
+//Параметры:
+//	hWnd	хендл родительского окна для диалога открытия
+//	hDC		хендл устройства, в которое будет загружено изображение
+//Возвращаемое значение: true в случае успешной загрузки, false иначе
+bool ISaveLoad::loadDlg(HWND hWnd, HDC hDC)
 {
-	TCHAR lpODFile[MAX_PATH] = {0};
+	TCHAR lpODFile[MAX_PATH] = {};
+	DWORD dwIndicesCnt = 0;
 
-	std::wstring tODFilter = mImpl->getLoadFilter();
+	std::wstring strODFilter = m_pImpl->getLoadFilter();
 
-	for (ULONG i = 0; i < tODFilter.size(); i++) 
+	for (ULONG i = 0; i < strODFilter.size(); i++) 
 	{
-		if (tODFilter[i] == '|')
-			tODFilter[i] = '\0';
+		if (strODFilter[i] == '|')
+		{
+			if ((i < strODFilter.length()) && (strODFilter[i + 1] != '|'))
+				dwIndicesCnt++;
+
+			strODFilter[i] = '\0';
+		}
 	}
 
-	if (GetOpenDialog(GetModuleHandle(NULL), hwnd, TEXT("Load Picture"), lpODFile,
-		MAX_PATH - 1, tODFilter.c_str(), 1, FALSE))
+	dwIndicesCnt >>= 1;
+
+	if (GetOpenDialog(GetModuleHandle(nullptr), hWnd, TEXT("Загрузка Изображения"), lpODFile,
+		MAX_PATH - 1, strODFilter.c_str(), dwIndicesCnt, FALSE))
 	{
-		mPathToImage = lpODFile;
+		m_strPathToImage = lpODFile;
 		
+		m_pImpl->loadImageFromFile(m_strPathToImage);
+		m_pImpl->drawImage(hDC);
+
 		return true;
 	}
 
 	return false;
 }
 
-void ISaveLoad::savePicture(HWND hwnd, HDC hDCCanvas, const RECT &aLimit)
+//Метод сохраняет изображение из формы в файл
+//Параметры:
+//	hWnd	хендл родительского окна для диалога сохранения
+//	hDC		хендл устройства, с которое будет сохранено изображение
+//Возвращаемое значение: true в случае успешной загрузки, false иначе
+bool ISaveLoad::saveDlg(HWND hWnd, HDC hDC)
 {
-	TCHAR lpSDFile[MAX_PATH] = {0};
-	TCHAR lpSDFilter[MAX_PATH] = {0};
-	TCHAR lpExt[64] = {0};
+	TCHAR lpSDFile[MAX_PATH] = {};
+	TCHAR lpSDFilter[MAX_PATH] = {};
+	TCHAR lpExt[64] = {};
 	DWORD dwFilterIndex = 1;
 
-	std::wstring tSaveFlt = mImpl->getSaveFilter();
+	std::wstring strSDFilter = m_pImpl->getSaveFilter();
 
-	for (ULONG i = 0; i < tSaveFlt.size(); i++) 
+	for (ULONG i = 0; i < strSDFilter.size(); i++) 
 	{
-		if (tSaveFlt[i] == '|')
-			tSaveFlt[i] = '\0';
+		if (strSDFilter[i] == '|')
+			strSDFilter[i] = '\0';
 	}
 
-	std::wstring tFilePath;
+	std::wstring strFilePath;
 
-	if (GetSaveDialog(GetModuleHandle(NULL), hwnd, TEXT("Save Picture As"), lpSDFile,
-		MAX_PATH - 1, tSaveFlt.c_str(), &dwFilterIndex, NULL))
+	if (GetSaveDialog(GetModuleHandle(nullptr), hWnd, TEXT("Сохранение Изображения..."), lpSDFile,
+		MAX_PATH - 1, strSDFilter.c_str(), &dwFilterIndex, nullptr))
 	{
-		tFilePath = lpSDFile;
-		mImpl->SavePictureToFile(hDCCanvas, aLimit, tFilePath, dwFilterIndex);
+		strFilePath = lpSDFile;
+
+		m_pImpl->saveImageToFile(hDC, strFilePath, dwFilterIndex);
+
+		return true;
 	}
+
+	return false;
 }
 
+int ISaveLoad::imageWidth()
+{
+	return m_pImpl->getImageDimensions().cx;
+}
+
+int ISaveLoad::imageHeight()
+{
+	return m_pImpl->getImageDimensions().cy;
+}
 
 SIZE_T GetOpenDialog(HINSTANCE hInstance,
 					HWND hWnd,
@@ -110,7 +159,7 @@ SIZE_T GetOpenDialog(HINSTANCE hInstance,
 					DWORD dwFilterIndex,
 					BOOL bMultiSelect)
 {
-	OPENFILENAME OFN = {0};
+	OPENFILENAME OFN = {};
 
 	OFN.lStructSize = sizeof(OFN);
 	OFN.hInstance = hInstance;
@@ -141,7 +190,7 @@ SIZE_T GetSaveDialog(HINSTANCE hInstance,
 					LPCTSTR lpDefExt,
 					LPCTSTR lpInitialDir)
 {
-	OPENFILENAME OFN = {0};
+	OPENFILENAME OFN = {};
 
 	OFN.lStructSize = sizeof(OFN);
 	OFN.hInstance = hInstance;

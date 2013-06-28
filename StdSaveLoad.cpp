@@ -12,139 +12,115 @@
 
 class StdSaveLoad : public ISaveLoadImpl
 {
+private:
+
+	HBITMAP m_hCurImage;
+
 public:
-	//Загрузка изображения посредством GDI+
+	//Отрисовка изображения посредством GDI
 	//Парметры:
-	//	hWndCanvas		окно, для которого предназначено изображение. Функция автоматически изменит размер окна под размер изображения
-	//	hDCCanvas		DC, на котором будет отрисовано изображение. Если передать NULL, функция использует DC окна hWndCanvas
-	//	lpFileName		имя файла изображения
-	//Функция не возвращает значений
 
-	virtual void DoLoadImage(HBITMAP hBitmap, const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+	//Метод не возвращает значений
+	virtual void drawImage(HDC hDC)
 	{
-		LONG lW, lH;
-		//HDC hDCCanvas1 = (hDCCanvas)?hDCCanvas:GetDC(hWndCanvas);
-		HDC hDCCanvas1 = (hdc)?hdc:GetDC(hwnd);
-
 		HBITMAP hOldBitmap;
-		BITMAP BMD = {0};
+		BITMAP BM = {};
 		
-		GetObject(hBitmap, sizeof(BMD), &BMD);
-		
-		lW = BMD.bmWidth;
-		lH = BMD.bmHeight;
-		if (lW > aLimit.right) 
-			lW = aLimit.right;
-		if (lH > aLimit.bottom) 
-			lH = aLimit.bottom;
+		GetObject(m_hCurImage, sizeof(BM), &BM);
 
-		aResultDims.left = 0;
-		aResultDims.top = 0;
-		aResultDims.right = lW;
-		aResultDims.bottom = lH;
+		HDC hDCSrc = CreateCompatibleDC(hDC);
+		hOldBitmap = (HBITMAP)SelectObject(hDCSrc, m_hCurImage);
 
-		if (hwnd)
-			SetWindowPos(hwnd, NULL, aLimit.left, aLimit.top, lW, lH, SWP_NOZORDER);
-
-		HDC hDCSrc = CreateCompatibleDC(hDCCanvas1);
-		hOldBitmap = (HBITMAP)SelectObject(hDCSrc, hBitmap);
-
-		SetStretchBltMode(hDCCanvas1, STRETCH_HALFTONE);
-		StretchBlt(hDCCanvas1, 0, 0, lW, lH, hDCSrc, 0, 0, BMD.bmWidth, BMD.bmHeight, SRCCOPY);
+		SetStretchBltMode(hDC, STRETCH_HALFTONE);
+		StretchBlt(hDC, 0, 0, BM.bmWidth, BM.bmHeight, hDCSrc, 0, 0, BM.bmWidth, BM.bmHeight, SRCCOPY);
 
 		DeleteObject(SelectObject(hDCSrc, hOldBitmap));
 		DeleteDC(hDCSrc);
-
-		if (!hdc)
-			ReleaseDC(hwnd, hDCCanvas1);
 	}
 
-	virtual void LoadImageFromFile(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc, const std::wstring &aPth)
+	virtual void loadImageFromFile(const std::wstring &strPath)
 	{
-		HBITMAP hBitmap = (HBITMAP)LoadImage(GetModuleHandle(NULL), aPth.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-		DoLoadImage(hBitmap, aLimit, aResultDims, hwnd, hdc);
+		m_hCurImage = (HBITMAP)LoadImage(GetModuleHandle(nullptr), strPath.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 	}
 
-	virtual void LoadStandardImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc)
+	virtual void loadStandardImage()
 	{
-		// resources...
-		HBITMAP hBitmap = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_DEFAULTBITMAP), IMAGE_BITMAP, 0, 0, 0);
-		DoLoadImage(hBitmap, aLimit, aResultDims, hwnd, hdc);
+		m_hCurImage = (HBITMAP)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDB_DEFAULTBITMAP), IMAGE_BITMAP, 0, 0, 0);
+	}
+
+	virtual SIZE getImageDimensions()
+	{
+		BITMAP BM = {};
 		
-	}
-
-	std::wstring LoadRes(int id)
-	{
-		const int MaxString = 1024;
-		wchar_t tPtr[MaxString];
-		const int tLen = LoadString(GetModuleHandle(NULL), id, tPtr, MaxString);
-		if( tPtr && tLen > 0 )
-			return std::wstring(tPtr, tPtr + tLen);
-
-		return std::wstring();
+		GetObject(m_hCurImage, sizeof(BM), &BM);
+		SIZE sz = { BM.bmWidth, BM.bmHeight };
+		return sz;
 	}
 
 	virtual std::wstring getLoadFilter()
 	{
-		return LoadRes(IDS_ODSTDFILTER);
+		return loadResString(IDS_ODSTDFILTER);
 	}
 
 	virtual std::wstring getSaveFilter()
 	{
-		return LoadRes(IDS_SDSTDFILTER);
+		return loadResString(IDS_SDSTDFILTER);
 	}
 
-	virtual void SavePictureToFile(HDC hDCCanvas, const RECT &aLimit, const std::wstring &aFile, int aFilterIdx)
+	virtual void saveImageToFile(HDC hDC, const std::wstring &strFile, int aFilterIdx)
 	{
-		std::wstring tFilePath = aFile;
-		std::wstring::size_type tPos = aFile.find_last_of(L".");
-		std::wstring tExt;
+		std::wstring strFilePath = strFile;
+		std::wstring::size_type nPos = strFile.find_last_of(L".");
+		std::wstring strExt;
 
-		if( tPos != std::string::npos )
-			tExt = aFile.substr(tPos);
+		if( nPos != std::string::npos )
+			strExt = strFile.substr(nPos);
 		
-		std::transform(tExt.begin(), tExt.end(), tExt.begin(), towlower);
+		std::transform(strExt.begin(), strExt.end(), strExt.begin(), towlower);
 
-		std::wstring tOldExt = tExt;
+		std::wstring strOldExt = strExt;
 
-		if (tExt != L".bmp")
-			tExt = L".bmp";
+		if (strExt != L".bmp")
+			strExt = L".bmp";
 
-		if( tOldExt != tExt )
-			tFilePath += tExt;
+		if( strOldExt != strExt )
+			strFilePath += strExt;
 
-		DoSavePicture(hDCCanvas, aLimit, tFilePath, tExt);
+		saveImage(hDC, strFilePath, strExt);
 	}
 
 
 
-	//Сохранение изображения посредством GDI+
+	//Сохранение изображения посредством GDI
 	//Параметры:
-	//	hDCCanvas		DC, с которого функция должна взять изображение
-	//	lpFileName		имя файла для сохранения изображения
-	//Функция не возвращает значений
-	void DoSavePicture(HDC hDCCanvas, const RECT &aLimit, const std::wstring &aFilePath, const std::wstring &aExt)
+
+	//Метод не возвращает значений
+	void saveImage(HDC hDC, const std::wstring &strFilePath, const std::wstring &strExt)
 	{
 		HANDLE hFile;
-		BITMAPFILEHEADER BFH = {0};
-		BITMAPINFO BMI = {0}, BMITmp = {0};
-		LPBYTE pData = NULL;
+		BITMAPFILEHEADER BFH = {};
+		BITMAPINFO BMI = {}, BMITmp = {};
+		BITMAP BM = {};
+		LPBYTE pData = nullptr;
 		ULONG lDataSize, lColors, lPaletteSize, lWritten;
 		HDC hCDC;
 		HBITMAP hTmpBitmap, hOldBitmap;
 
-		hFile = CreateFile(aFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		hFile = CreateFile(strFilePath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	
 		if (hFile != INVALID_HANDLE_VALUE)
 		{
-			hCDC = CreateCompatibleDC(hDCCanvas);
-			hTmpBitmap = CreateCompatibleBitmap(hDCCanvas, aLimit.right - aLimit.left, aLimit.bottom - aLimit.top);
+			//Получаем информацию о текущем изображении
+			GetObject(GetCurrentObject(hDC, OBJ_BITMAP), sizeof(BITMAP), &BM);
+
+			hCDC = CreateCompatibleDC(hDC);
+			hTmpBitmap = CreateCompatibleBitmap(hDC, BM.bmWidth, BM.bmHeight);
 			hOldBitmap = (HBITMAP)SelectObject(hCDC, hTmpBitmap);
 
-			BitBlt(hCDC, 0, 0, aLimit.right - aLimit.left, aLimit.bottom - aLimit.top, hDCCanvas, 0, 0, SRCCOPY);
+			BitBlt(hCDC, 0, 0, BM.bmWidth, BM.bmHeight, hDC, 0, 0, SRCCOPY);
 
 			BMITmp.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-			GetDIBits(hCDC, hTmpBitmap, 0, 0, NULL, &BMITmp, DIB_RGB_COLORS);
+			GetDIBits(hCDC, hTmpBitmap, 0, 0, nullptr, &BMITmp, DIB_RGB_COLORS);
 
 			lDataSize = BMITmp.bmiHeader.biSizeImage;
 			pData = new BYTE[lDataSize];
@@ -167,9 +143,9 @@ public:
 			BFH.bfType = 0x4D42; //BM
 			BFH.bfOffBits = (sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + lPaletteSize);
 			BFH.bfSize = (sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + lDataSize);
-			WriteFile(hFile, &BFH, sizeof(BITMAPFILEHEADER), &lWritten, NULL);
-			WriteFile(hFile, &BMI.bmiHeader, sizeof(BITMAPINFOHEADER), &lWritten, NULL);
-			WriteFile(hFile, pData, lDataSize, &lWritten, NULL);
+			WriteFile(hFile, &BFH, sizeof(BITMAPFILEHEADER), &lWritten, nullptr);
+			WriteFile(hFile, &BMI.bmiHeader, sizeof(BITMAPINFOHEADER), &lWritten, nullptr);
+			WriteFile(hFile, pData, lDataSize, &lWritten, nullptr);
 
 			if (pData)
 				delete[] pData;

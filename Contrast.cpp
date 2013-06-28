@@ -64,10 +64,10 @@ public:
 };
 
 
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|-100", Contrast, -100);
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|-50", Contrast, -50);
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|-32", Contrast, -32);
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|32", Contrast, 32);
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|50", Contrast, 50);
-AUTO_REGISTER_ALGORITHM1(L"Filters|Contrast|100", Contrast, 100);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|-100", Contrast, -100);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|-50", Contrast, -50);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|-32", Contrast, -32);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|32", Contrast, 32);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|50", Contrast, 50);
+AUTO_REGISTER_ALGORITHM1(L"Фильтры|Contrast|100", Contrast, 100);
 

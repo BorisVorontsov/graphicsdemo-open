@@ -75,6 +75,6 @@ public:
 	}
 };
 
-AUTO_REGISTER_ALGORITHM1( L"Filters|Median|4px",  Median, 8 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Median|8px",  Median, 8 );
-AUTO_REGISTER_ALGORITHM1( L"Filters|Median|16px",  Median, 8 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Median|4px",  Median, 8 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Median|8px",  Median, 8 );
+AUTO_REGISTER_ALGORITHM1( L"Фильтры|Median|16px",  Median, 8 );

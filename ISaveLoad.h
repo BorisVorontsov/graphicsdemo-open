@@ -9,28 +9,37 @@ public:
 
 	static ISaveLoadImpl* create();
 
-	virtual void LoadStandardImage(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc) = 0;
-	virtual void LoadImageFromFile(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc, const std::wstring &aPth) = 0;
+	virtual void drawImage(HDC hDC) = 0;
+	virtual void loadStandardImage() = 0;
+	virtual void loadImageFromFile(const std::wstring &strPath) = 0;
+
+	virtual SIZE getImageDimensions() = 0;
 
 	virtual std::wstring getLoadFilter() = 0;
 	virtual std::wstring getSaveFilter() = 0;
 
-	virtual void SavePictureToFile(HDC hDCCanvas, const RECT &aLimit, const std::wstring &aFile, int aFilterIdx) = 0;
+	virtual void saveImageToFile(HDC hDC, const std::wstring &strFile, int nFilterIdx) = 0;
+
+protected:
+	std::wstring loadResString(int id);
 };
 
 class ISaveLoad: public pattern::SingletonStatic<ISaveLoad>
 {
-	ISaveLoadImpl *mImpl;
+private:
+	ISaveLoadImpl *m_pImpl;
+	std::wstring m_strPathToImage;
 
-	std::wstring mPathToImage;
 public:
 	ISaveLoad();
 	~ISaveLoad();
 
-	//void LoadStandardmage( const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc);
-	void reload(const RECT &aLimit, RECT &aResultDims, HWND hwnd, HDC hdc);
+	void reload(HDC hDC);
 
-	bool loadDlg(HWND hwnd);
-	void savePicture(HWND hwnd, HDC hDCCanvas, const RECT &aLimit);
+	bool loadDlg(HWND hWnd, HDC hDC);
+	bool saveDlg(HWND hWnd, HDC hDC);
+
+	int imageWidth();
+	int imageHeight();
 };
 

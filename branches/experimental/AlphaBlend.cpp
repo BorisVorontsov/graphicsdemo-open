@@ -130,7 +130,7 @@ class AlphaBlendWrapp: public IAlgorithm
 {
 	virtual void processImage(LPIMAGEDESCR pIMGDESCR, LPBYTE pPixels, ULONG lBytesCnt, const RECT &pRC){}
 
-	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND hWndCallback)
+	virtual bool process(HDC hDC, const RECT &rcAreaToProcess, const RECT &rcCanvas, HWND hWndCallback)
 	{
 		Graphics *pGraphics = nullptr;
 		Image *pImage = new Image(lpPic2Path);
@@ -152,7 +152,7 @@ class AlphaBlendWrapp: public IAlgorithm
 
 			RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
 				(rcCanvas.bottom + (lH * 2)) >> 1};
-			AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, hWndCallback);
+			AlphaBlend(hDC, rcAreaToProcess.right, rcAreaToProcess.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, hWndCallback);
 
 			DeleteObject(SelectObject(hTmpDC, hOldBmp));
 			DeleteDC(hTmpDC);

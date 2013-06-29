@@ -7,20 +7,20 @@
 #endif
 */
 
-#define	APP_NAME			TEXT("Graphics Demo")
+#define	APP_NAME				TEXT("Graphics Demo")
 
-#define GD_MIN_CANV_LEFT	10
-#define GD_MIN_CANV_TOP		10
+#define GD_MIN_CANV_LEFT		10
+#define GD_MIN_CANV_TOP			10
 
 typedef struct tagIMGPROCINFO
 {
-	DWORD dwFltIndex;		//Индекс выбранного фильтра
-	HWND hWndMain;			//Главное окно
-	HWND hWndCanvas;		//Окно, на котором будет отбражен эффект
-	HDC hDBDC;				//DC двойной буферизации, к которому будет применен эффект. Если не задан, то поток обработки возьмет DC окна hWndCanvas
-	HWND hWndProgress;		//Окно прогресса обработки
+	DWORD dwFltIndex;			//Индекс выбранного фильтра
+	HWND hWndMain;				//Главное окно
+	HWND hWndCanvas;			//Окно, на котором будет отбражен эффект
+	HDC hDBDC;					//DC двойной буферизации, к которому будет применен эффект. Если не задан, то поток обработки возьмет DC окна hWndCanvas
+	HWND hWndProgress;			//Окно прогресса обработки
 	HWND hWndPerfomanceInfo;
-	RECT rcPicture;			//Область внутри hDCCanvas для изменения
+	SIZE szCanvas;				//Размеры холста
 	DWORD dwReserved;
 } IMGPROCINFO, *LPIMGPROCINFO;
 

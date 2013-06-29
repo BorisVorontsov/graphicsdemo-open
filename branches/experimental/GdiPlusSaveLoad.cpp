@@ -18,7 +18,7 @@ void ComRelease(IUnknown *pUnk)
 class GdiPlusSaveLoad : public ISaveLoadImpl
 {
 private:
-	Image *m_pCurImage;
+	std::auto_ptr<Image> m_pCurImage;
 
 	//Вспомогательная функция, для получения UID encoder'а по формату изображения
 	bool getEncoderClsid(LPCTSTR lpFmt, CLSID* pClsid)
@@ -62,8 +62,7 @@ public:
 
 	~GdiPlusSaveLoad()
 	{
-		if (m_pCurImage)
-			delete m_pCurImage;
+
 	}
 
 	//Отрисовка загруженного изображения
@@ -72,14 +71,14 @@ public:
 	//Метод не возвращает значений
 	void drawImage(HDC hDC)
 	{
-		if (!m_pCurImage) return;
+		if (!m_pCurImage.get()) return;
 
 		Graphics pGraphics(hDC);
 
 		if (m_pCurImage->GetLastStatus() == Ok)
 		{
 			Rect rcImage(0, 0, m_pCurImage->GetWidth(), m_pCurImage->GetHeight());
-			pGraphics.DrawImage(m_pCurImage, rcImage);
+			pGraphics.DrawImage(m_pCurImage.get(), rcImage);
 		}
 	}
 
@@ -89,10 +88,7 @@ public:
 	//Метод не возвращает значений
 	virtual void loadImageFromFile(const std::wstring &strPath)
 	{
-		if (m_pCurImage)
-			delete m_pCurImage;
-
-		m_pCurImage = new Image(strPath.c_str());
+		m_pCurImage.reset(new Image(strPath.c_str()));
 	}
 
 	//Загрузка демонстрационного изображения
@@ -109,17 +105,14 @@ public:
 		if( !SUCCEEDED(pStream->Write(get_Sample_jpg_buf(), get_Sample_jpg_size(), 0) ) )
 			return;
 
-		if (m_pCurImage)
-			delete m_pCurImage;
-
-		m_pCurImage = new Image(upStream.get());
+		m_pCurImage.reset(new Image(upStream.get()));
 	}
 
 	virtual SIZE getImageDimensions()
 	{
 		SIZE sz = {};
 
-		if (m_pCurImage)
+		if (m_pCurImage.get())
 		{
 			sz.cx = m_pCurImage->GetWidth();
 			sz.cy = m_pCurImage->GetHeight();

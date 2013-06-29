@@ -22,6 +22,6 @@ public:
 	virtual ~IAlgorithm();
 
 	void setPerfomanceMode(bool aIsPerfomance);
-	virtual bool process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND hWndCallback);
+	virtual bool process(HDC hDC, const RECT &rcAreaToProcess, const RECT &rcCanvas, HWND hWndCallback);
 };
 

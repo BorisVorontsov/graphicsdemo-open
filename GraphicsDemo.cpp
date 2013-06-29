@@ -249,6 +249,9 @@ LRESULT CALLBACK CanvasProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_SIZE:
 		{
+			IPI.szCanvas.cx = LOWORD(lParam);
+			IPI.szCanvas.cy = HIWORD(lParam);
+
 			if (!hImgProcThread)
 			{
 				HDC hDC = GetDC(hWnd);
@@ -319,13 +322,15 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 	HDC hDC = (IPI.hDBDC)?IPI.hDBDC:GetDC(IPI.hWndCanvas);
 
-	RECT rcCanvas, rcPicture;
-	CopyRect(&rcCanvas, (const LPRECT)&IPI.rcPicture);
-	CopyRect(&rcPicture, (const LPRECT)&IPI.rcPicture);
-	rcCanvas.left += 8;
-	rcCanvas.top += 8;
-	rcCanvas.right = rcCanvas.right - 8;
-	rcCanvas.bottom = rcCanvas.bottom - 8;
+	RECT rcCanvas, rcAreaToProcess;
+	SetRect(&rcCanvas, 0, 0, IPI.szCanvas.cx, IPI.szCanvas.cy);
+	SetRect(&rcAreaToProcess, 0, 0, IPI.szCanvas.cx, IPI.szCanvas.cy);
+
+	//Тут мы несколько уменьшаем область применения для визуального эффекта
+	rcAreaToProcess.left += 8;
+	rcAreaToProcess.top += 8;
+	rcAreaToProcess.right = rcAreaToProcess.right - 8;
+	rcAreaToProcess.bottom = rcAreaToProcess.bottom - 8;
 	
 	if ( !isPerfomanceMode && IPI.dwFltIndex != IDM_FILTERS_BLUR_OCL)
 		ShowWindow(IPI.hWndProgress, SW_SHOW);
@@ -341,17 +346,17 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 		QueryPerformanceCounter(&intStart);
 	}
 
-	std::auto_ptr<IAlgorithm> tPtr = AlgorithmFactory::getInstance().create(IPI.dwFltIndex);
-	if( tPtr.get() )
+	std::auto_ptr<IAlgorithm> pFilter = AlgorithmFactory::getInstance().create(IPI.dwFltIndex);
+	if( pFilter.get() )
 	{
-		tPtr->setPerfomanceMode( isPerfomanceMode );
-		tPtr->process(hDC, rcPicture, rcCanvas, IPI.hWndProgress);
+		pFilter->setPerfomanceMode( isPerfomanceMode );
+		pFilter->process(hDC, rcAreaToProcess, rcCanvas, IPI.hWndProgress);
 	}
-	else
+	/*else
 	{
 		switch (IPI.dwFltIndex)
 		{
-	/*#ifdef __USE_GDIPLUS__
+	#ifdef __USE_GDIPLUS__
 			case IDM_FILTERS_ALPHABLEND:
 			{
 				Graphics *pGraphics = nullptr;
@@ -373,7 +378,7 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 					RECT rcCanvas2 = {(rcCanvas.right - (lW * 2)) >> 1, (rcCanvas.bottom - (lH * 2)) >> 1, (rcCanvas.right + (lW * 2)) >> 1,
 						(rcCanvas.bottom + (lH * 2)) >> 1};
-					AlphaBlend(hDC, rcPicture.right, rcPicture.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
+					AlphaBlend(hDC, rcAreaToProcess.right, rcAreaToProcess.bottom, hTmpDC, lW, lH, 128, AM_ALPHA_IGNORE, &rcCanvas2, IPI.hWndProgress);
 
 					DeleteObject(SelectObject(hTmpDC, hOldBmp));
 					DeleteDC(hTmpDC);
@@ -384,11 +389,11 @@ UINT WINAPI ImgProcThreadMain(LPVOID pArg)
 
 				break;
 			}
-	#endif*/
+	#endif
 			default:
 				break;
 		}
-	}
+	}*/
 	
 
 	if(isPerfomanceMode)

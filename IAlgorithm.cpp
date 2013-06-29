@@ -13,15 +13,15 @@ IAlgorithm::~IAlgorithm(void)
 {
 }
 
-bool IAlgorithm::process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, HWND hWndCallback)
+bool IAlgorithm::process(HDC hDC, const RECT &rcAreaToProcess, const RECT &rcCanvas, HWND hWndCallback)
 {
 	mWndCallback = hWndCallback;
 
 	LPBYTE pPixels = nullptr;
 	ULONG lBytesCnt = 0;
 	LPIMAGEDESCR pIMGDESCR = nullptr;
-	ULONG lW = rcPicture.right;
-	ULONG lH = rcPicture.bottom;
+	ULONG lW = rcCanvas.right;
+	ULONG lH = rcCanvas.bottom;
 
 	//Получаем пиксели изображения
 	if (!GetImagePixels(hDC, lW, lH, &pPixels, &lBytesCnt, &pIMGDESCR)) {
@@ -32,7 +32,7 @@ bool IAlgorithm::process(HDC hDC, const RECT &rcPicture, const RECT &rcCanvas, H
 		return false;
 	}
 
-	processImage(pIMGDESCR, pPixels, lBytesCnt, rcCanvas);
+	processImage(pIMGDESCR, pPixels, lBytesCnt, rcAreaToProcess);
 
 	//Присваиваем измененные пиксели
 	SetImagePixels(hDC, lW, lH, pPixels, pIMGDESCR);

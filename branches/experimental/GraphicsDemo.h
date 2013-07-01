@@ -20,6 +20,7 @@ typedef struct tagIMGPROCINFO
 	HDC hDBDC;					//DC двойной буферизации, к которому будет применен эффект. Если не задан, то поток обработки возьмет DC окна hWndCanvas
 	HWND hWndProgress;			//Окно прогресса обработки
 	HWND hWndPerfomanceInfo;
+	POINT ptViewportOffset;		//Сдвиг вьюпорта относительно начальных координат вторичного буфера
 	SIZE szCanvas;				//Размеры холста
 	DWORD dwReserved;
 } IMGPROCINFO, *LPIMGPROCINFO;

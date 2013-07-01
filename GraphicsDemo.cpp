@@ -230,6 +230,13 @@ LRESULT CALLBACK CanvasProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
+		case WM_MOUSEMOVE:
+			if (GetAsyncKeyState(VK_LBUTTON))
+			{
+				IPI.ptViewportOffset.x = LOWORD(lParam);
+				IPI.ptViewportOffset.y = HIWORD(lParam);
+			}
+			break;
 		case WM_ERASEBKGND:
 			return TRUE;
 		case WM_PAINT:
@@ -241,7 +248,7 @@ LRESULT CALLBACK CanvasProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			GetClientRect(hWnd, &rcClient);
 
 			if (hDBDC)
-				BitBlt(hDC, 0, 0, rcClient.right, rcClient.bottom, hDBDC, 0, 0, SRCCOPY);
+				BitBlt(hDC, 0, 0, rcClient.right, rcClient.bottom, hDBDC, IPI.ptViewportOffset.x, IPI.ptViewportOffset.y, SRCCOPY);
 
 			EndPaint(hWnd, &PS);
 			
